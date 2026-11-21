@@ -6,12 +6,11 @@ import { encodeFunctionData, parseEther, toFunctionSelector } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { forwardRequestTypedData } from "~/chain/forward";
-import { deadlineIn } from "~/chain/permit";
 import { committeeAbi, forwarderAbi } from "~/contracts/abis";
 import { Operator } from "~/server/operator";
 import { RelayService } from "~/server/relay";
 import { RpcGateway } from "~/server/rpc-gateway";
-import { ANVIL_KEYS, ANVIL_URL, deployContract, deployFundSystem, testChain, testClient } from "./helpers";
+import { ANVIL_KEYS, ANVIL_URL, deadlineOnChain, deployContract, deployFundSystem, testChain, testClient } from "./helpers";
 
 const key = ANVIL_KEYS[5];
 const client = testClient(key);
@@ -59,7 +58,7 @@ function pitch(projectAddress: Address, name = "Demo Project"): Hex {
 }
 
 async function sign(signer: PrivateKeyAccount, fields: Partial<ForwardRequest> & { data: Hex }): Promise<SignedForwardRequest> {
-  const request: ForwardRequest = { from: signer.address, to: system.committee, value: 0n, gas: PITCH_GAS, deadline: Number(deadlineIn(600)), ...fields };
+  const request: ForwardRequest = { from: signer.address, to: system.committee, value: 0n, gas: PITCH_GAS, deadline: Number(await deadlineOnChain(600)), ...fields };
   const nonce = await client.readContract({ address: system.forwarder, abi: forwarderAbi, functionName: "nonces", args: [request.from] });
   const signature = await signer.signTypedData(forwardRequestTypedData({ chainId: testChain.id, forwarder: system.forwarder, nonce, request }));
   return { ...request, signature };
@@ -110,7 +109,7 @@ describe("relay", () => {
     const signed = await sign(founder, { data: pitch(first, "Original") });
     expect(await relay.relay({ ...signed, data: pitch(first, "Altered") })).toEqual({ status: "refused", reason: "signature" });
 
-    const expired = await sign(founder, { data: pitch(first), deadline: Number(deadlineIn(-60)) });
+    const expired = await sign(founder, { data: pitch(first), deadline: Number(await deadlineOnChain(-60)) });
     expect(await relay.relay(expired)).toEqual({ status: "refused", reason: "signature" });
 
     expect((await relay.relay(signed)).status).toBe("relayed");

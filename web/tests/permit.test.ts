@@ -3,9 +3,9 @@ import { maxUint256, parseEther, parseSignature } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PERMIT2_ADDRESS } from "~/chain/contracts";
-import { deadlineIn, permit2TransferTypedData, permitTypedData, randomPermit2Nonce } from "~/chain/permit";
+import { permit2TransferTypedData, permitTypedData, randomPermit2Nonce } from "~/chain/permit";
 import { tokenAbi, vaultAbi } from "~/contracts/abis";
-import { ANVIL_KEYS, deployContract, testChain, testClient } from "./helpers";
+import { ANVIL_KEYS, deadlineOnChain, deployContract, testChain, testClient } from "./helpers";
 
 const key = ANVIL_KEYS[4];
 const owner = privateKeyToAccount(key).address;
@@ -34,7 +34,7 @@ describe("permitTypedData", () => {
   it("produces a signature the token and the vault accept", async () => {
     const before = await shares();
     const value = parseEther("100");
-    const deadline = deadlineIn(600);
+    const deadline = await deadlineOnChain(600);
     const nonce = await client.readContract({ address: token, abi: tokenAbi, functionName: "nonces", args: [owner] });
 
     const signature = await client.signTypedData(
@@ -50,7 +50,7 @@ describe("permitTypedData", () => {
 
   it("is refused when signed for the wrong domain name", async () => {
     const value = parseEther("1");
-    const deadline = deadlineIn(600);
+    const deadline = await deadlineOnChain(600);
     const nonce = await client.readContract({ address: token, abi: tokenAbi, functionName: "nonces", args: [owner] });
     const signature = await client.signTypedData(
       permitTypedData({ chainId: testChain.id, token, name: "Another Token", owner, spender: vault, value, nonce, deadline }),
@@ -69,7 +69,7 @@ describe("permit2TransferTypedData", () => {
     const before = await shares();
     const amount = parseEther("50");
     const nonce = randomPermit2Nonce();
-    const deadline = deadlineIn(600);
+    const deadline = await deadlineOnChain(600);
 
     const signature = await client.signTypedData(
       permit2TransferTypedData({ chainId: testChain.id, token, amount, spender: vault, nonce, deadline }),
@@ -81,7 +81,7 @@ describe("permit2TransferTypedData", () => {
 
   it("cannot be used for a larger amount than was signed", async () => {
     const nonce = randomPermit2Nonce();
-    const deadline = deadlineIn(600);
+    const deadline = await deadlineOnChain(600);
     const signature = await client.signTypedData(
       permit2TransferTypedData({ chainId: testChain.id, token, amount: parseEther("1"), spender: vault, nonce, deadline }),
     );

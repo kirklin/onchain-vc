@@ -5,7 +5,7 @@ import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import path from "node:path";
-import { createTestClient, createWalletClient, defineChain, http, parseEther, publicActions } from "viem";
+import { createPublicClient, createTestClient, createWalletClient, defineChain, http, parseEther, publicActions } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { PERMIT2_ADDRESS } from "~/chain/contracts";
 import { networks } from "~/chain/networks";
@@ -38,6 +38,15 @@ export function testClient(key: Hex) {
     transport: http(ANVIL_URL),
     pollingInterval: 50,
   }).extend(publicActions);
+}
+
+/**
+ * A deadline counted from the chain's own clock. This chain mines ten blocks a second and
+ * each block is a second later than the last, so its clock runs well ahead of the wall clock.
+ */
+export async function deadlineOnChain(seconds: number): Promise<bigint> {
+  const block = await createPublicClient({ chain: testChain, transport: http(ANVIL_URL) }).getBlock();
+  return block.timestamp + BigInt(seconds);
 }
 
 /** Deploys a contract from the Foundry build output. */
