@@ -7,6 +7,8 @@ packages:
   - web
 
 allowBuilds:
+  "@google/genai": false
   "@parcel/watcher": true
   "@swc/core": true
   esbuild: true
+  protobufjs: false

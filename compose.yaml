@@ -1,4 +1,4 @@
-# The app with an IPFS node for its files.
+# The app with a Postgres server for its data and an IPFS node for its files.
 #   docker compose up --build
 # Settings come from .env: see .env.example. NEXT_PUBLIC_ values are read at build time.
 services:
@@ -12,12 +12,27 @@ services:
       - path: .env
         required: false
     environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/postgres
       IPFS_API_URL: http://ipfs:5001
     ports:
       - "3000:3000"
     depends_on:
+      postgres:
+        condition: service_healthy
       ipfs:
         condition: service_started
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # Its RPC port stays inside this network. Only the web service talks to it.
   ipfs:
@@ -26,4 +41,5 @@ services:
       - ipfs:/data/ipfs
 
 volumes:
+  postgres:
   ipfs:

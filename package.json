@@ -15,6 +15,7 @@
     "chain": "node scripts/chain.ts",
     "deploy:contracts": "node scripts/deploy.ts",
     "keygen": "node scripts/keygen.ts",
+    "db:generate": "pnpm --filter @onchain-vc/web db:generate",
     "build": "pnpm --filter @onchain-vc/web build",
     "start": "pnpm --filter @onchain-vc/web start",
     "test": "pnpm test:contracts && pnpm test:web",

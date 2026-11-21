@@ -21,6 +21,9 @@ function lanAddresses(): string[] {
 const nextConfig: NextConfig = {
   // Lets a phone on the same network open the dev server by this machine's address.
   allowedDevOrigins: lanAddresses(),
+  // PGlite loads its WebAssembly and data files from its own folder at run time, and pi-ai
+  // loads each provider's API on first use through imports a bundler cannot follow.
+  serverExternalPackages: ["@electric-sql/pglite", "@earendil-works/pi-ai", "@earendil-works/pi-agent-core", "@earendil-works/pi-schema"],
   headers: async () => [
     {
       source: "/(.*)",
