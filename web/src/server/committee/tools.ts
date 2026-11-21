@@ -1,12 +1,12 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type { Address, Chain, Hex, PublicClient, Transport } from "viem";
+import type { AbiFunction, Address, Chain, Hex, PublicClient, Transport } from "viem";
 import type { Database } from "../db";
 import type { RoleKey, StageKey } from "~/chain/committee";
 import type { Network } from "~/chain/networks";
 import { Buffer } from "node:buffer";
-import { obj, str } from "@earendil-works/pi-schema";
+import { arr, obj, opt, str } from "@earendil-works/pi-schema";
 import { and, asc, eq } from "drizzle-orm";
-import { formatEther, formatUnits, getAddress, isAddress, keccak256, parseAbi, toFunctionSelector } from "viem";
+import { formatEther, formatUnits, getAddress, isAddress, keccak256, parseAbi, parseAbiItem, toFunctionSelector } from "viem";
 import { STAGES } from "~/chain/committee";
 import { networks } from "~/chain/networks";
 import { committeeAbi, fundAbi } from "~/contracts/abis";
@@ -43,6 +43,7 @@ export const STAGE_NAMES: Record<StageKey, string> = {
 const EIP1967_IMPLEMENTATION = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 const MINIMAL_PROXY = /^0x363d3d373d3d3d363d73([0-9a-f]{40})5af43d82803e903d91602b57fd5bf3$/i;
 const MAX_SOURCE_CHARS = 6000;
+const MAX_CHECKED_FUNCTIONS = 12;
 
 /** Functions worth noticing in someone's contract, by the 4-byte selector they compile to. */
 const KNOWN_FUNCTIONS = [
@@ -155,13 +156,59 @@ async function verifiedSource(chainId: number, address: Address): Promise<string
   return `源码验证：已在 Sourcify 验证，共 ${files.length} 个项目文件。源码${joined.length > MAX_SOURCE_CHARS ? `前 ${MAX_SOURCE_CHARS} 个字符` : ""}如下：\n${joined.slice(0, MAX_SOURCE_CHARS)}`;
 }
 
+function shown(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(shown).join("，")}]`;
+  }
+  if (typeof value === "object" && value !== null) {
+    return JSON.stringify(value, (_key, field: unknown) => (typeof field === "bigint" ? field.toString() : field));
+  }
+  return String(value);
+}
+
+/**
+ * Looks in a contract's dispatcher for the functions a pitch names, and calls the ones that
+ * take nothing and say what they return. A project's own functions appear in no list of
+ * well-known ones, so this is how a partner checks that the contract does what the pitch says.
+ */
+async function checkFunctions(client: ToolContext["client"], address: Address, selectors: Set<string>, signatures: string[]): Promise<string[]> {
+  const named = signatures.map((signature) => {
+    const item = parseAbiItem(`function ${signature.trim().replace(/^function\s+/, "")}`) as AbiFunction;
+    return { signature, item, present: selectors.has(toFunctionSelector(item)) };
+  });
+  const callable = named.filter(({ item, present }) => present && item.inputs.length === 0 && item.outputs.length > 0);
+  const results = await client.multicall({
+    allowFailure: true,
+    contracts: callable.map(({ item }) => ({ address, abi: [item], functionName: item.name })),
+  });
+  return named.map((entry) => {
+    if (!entry.present) {
+      return `${entry.signature}：字节码里没有这个函数。`;
+    }
+    const index = callable.indexOf(entry);
+    if (index === -1) {
+      return `${entry.signature}：字节码里有这个函数。`;
+    }
+    const result = results[index]!;
+    return result.status === "success"
+      ? `${entry.signature}：字节码里有这个函数，现在返回 ${shown(result.result)}。`
+      : `${entry.signature}：字节码里有这个函数，这次调用没有成功。`;
+  });
+}
+
 /** Reads a contract the way a reviewer would: size, functions, proxies, token facts and source. */
 export function readContractTool(context: ToolContext): AgentTool<any> {
-  const parameters = obj({ address: str({ description: "要读取的合约地址，0x 开头。通常是项目合约。" }) });
+  const parameters = obj({
+    address: str({ description: "要读取的合约地址，0x 开头。通常是项目合约。" }),
+    functions: opt(arr(
+      str({ description: "一个函数的 Solidity 签名，例如 sign(string) 或 count() returns (uint256)。" }),
+      { maxItems: MAX_CHECKED_FUNCTIONS, description: "路演材料里提到的函数，按签名逐个写。工具会核对字节码里有没有每个函数；不带参数并且写了 returns 的函数还会调用一次，给出现在的返回值。" },
+    )),
+  });
   const tool: AgentTool<typeof parameters> = {
     name: "read_contract",
     label: "读取合约",
-    description: "读取链上一个合约：字节码大小和哈希、能识别出的函数、是否代理合约、作为代币的名称和发行量、所有者，以及在 Sourcify 验证过的源码。",
+    description: "读取链上一个合约：字节码大小和哈希、常见函数里能认出的、是否代理合约、作为代币的名称和发行量、所有者，以及在 Sourcify 验证过的源码。项目自己写的函数不在常见函数里，要核对它们，把签名放进 functions。",
     parameters,
     async execute(_id, params) {
       const address = checkedAddress(params.address);
@@ -185,7 +232,12 @@ export function readContractTool(context: ToolContext): AgentTool<any> {
 
       const selectors = pushedSelectors(logic);
       const known = [...selectors].flatMap(selector => SELECTORS.get(selector) ?? []);
-      lines.push(`字节码里约有 ${selectors.size} 个函数入口，认出的有：${known.length === 0 ? "无" : known.join("、")}。`);
+      lines.push(`字节码里约有 ${selectors.size} 个函数入口。常见的代币、权限和升级函数里，认出的有：${known.length === 0 ? "无" : known.join("、")}。`);
+      if (params.functions !== undefined && params.functions.length > 0) {
+        lines.push("按签名核对的结果：", ...await checkFunctions(client, address, selectors, params.functions));
+      } else {
+        lines.push("项目自己写的函数没有核对。要核对，带上 functions 再读一次。");
+      }
 
       const reads = await client.multicall({
         allowFailure: true,

@@ -120,6 +120,21 @@ describe("partners' tools", () => {
     expect(text).toContain("本地链没有源码验证服务");
   });
 
+  it("checks the functions a pitch names against the contract, and calls the ones that take nothing", async () => {
+    const token = await deployContract("Token", key, ["Pizza Coin", "PIZZA", client.account.address]);
+    const tool = readContractTool(toolContext(system, { project: token, founder: client.account.address, dealId: 1 }));
+
+    const unchecked = textOf(await tool.execute("call", { address: token }));
+    expect(unchecked).toContain("项目自己写的函数没有核对");
+
+    const text = textOf(await tool.execute("call", { address: token, functions: ["claim()", "symbol() returns (string)", "totalSupply() returns (uint256)", "function sign(string)"] }));
+    expect(text).toContain("claim()：字节码里有这个函数。");
+    expect(text).toContain("symbol() returns (string)：字节码里有这个函数，现在返回 PIZZA。");
+    expect(text).toContain("totalSupply() returns (uint256)：字节码里有这个函数，现在返回 0。");
+    expect(text).toContain("function sign(string)：字节码里没有这个函数。");
+    await expect(tool.execute("call", { address: token, functions: ["not a signature"] })).rejects.toThrow();
+  });
+
   it("says when an address holds no code", async () => {
     const someone = privateKeyToAccount(generatePrivateKey()).address;
     const tool = readContractTool(toolContext(system, { project: someone, founder: someone, dealId: 1 }));
