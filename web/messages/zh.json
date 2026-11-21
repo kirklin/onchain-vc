@@ -1,0 +1,76 @@
+{
+  "app": {
+    "name": "链上投委会",
+    "tagline": "全自动链上 AI 孵化器与微型投委会"
+  },
+  "common": {
+    "connectFirst": "请先连接钱包。",
+    "notDeployed": "{name} 还没有部署到「{network}」。",
+    "notDeployedHint": "为这个网络运行 pnpm deploy:contracts，然后刷新页面。",
+    "copied": "已复制",
+    "viewOnExplorer": "在区块浏览器中查看",
+    "days": "{count}天"
+  },
+  "connect": {
+    "button": "连接钱包",
+    "title": "连接钱包",
+    "description": "选择一种连接方式。",
+    "browserWallet": "浏览器钱包",
+    "burner": "临时钱包",
+    "burnerHint": "在当前浏览器里生成，仅用于测试。",
+    "openInMetaMask": "在 MetaMask 中打开",
+    "openInMetaMaskHint": "用 MetaMask 应用里的浏览器打开这个页面。",
+    "failed": "未能连接，请再试。",
+    "disconnect": "断开连接",
+    "copyAddress": "复制地址",
+    "getTestFunds": "领取测试币",
+    "switchTo": "切换到「{network}」"
+  },
+  "faucet": {
+    "funded": "已领取{amount} {symbol}",
+    "sufficient": "余额充足，无需领取",
+    "limit": "该地址领取的测试币已达上限",
+    "exhausted": "测试币已发完",
+    "failed": "未能领取测试币，请稍后再试"
+  },
+  "settings": {
+    "label": "设置",
+    "theme": "外观",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
+    "language": "语言"
+  },
+  "tx": {
+    "confirmInWallet": "请在钱包中确认",
+    "sending": "正在发送",
+    "relayLimit": "操作太频繁，请稍后再试",
+    "relayExhausted": "暂时无法免手续费发送，请稍后再试",
+    "waiting": "正在等待确认",
+    "confirmed": "已确认",
+    "view": "查看",
+    "rejected": "已取消",
+    "insufficientFunds": "余额不足，无法支付手续费",
+    "reverted": "交易未能执行",
+    "revertedWith": "交易未能执行：{reason}",
+    "failed": "操作失败，请稍后再试",
+    "cancelled": "交易已取消",
+    "untitled": "交易"
+  },
+  "activity": {
+    "settled": {
+      "confirmed": "「{title}」已确认",
+      "reverted": "「{title}」未能执行",
+      "replaced": "「{title}」已被替换"
+    }
+  },
+  "states": {
+    "notFound": "找不到这个页面",
+    "notFoundHint": "链接可能有误，或者页面已被移走。",
+    "home": "回到首页",
+    "error": "页面出了问题",
+    "errorHint": "请再试一次。",
+    "retry": "再试",
+    "loadFailed": "未能加载"
+  }
+}

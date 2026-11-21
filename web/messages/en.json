@@ -1,0 +1,76 @@
+{
+  "app": {
+    "name": "Onchain VC",
+    "tagline": "An AI incubator and micro investment committee, run entirely on chain"
+  },
+  "common": {
+    "connectFirst": "Connect a wallet to continue.",
+    "notDeployed": "{name} is not deployed on {network}.",
+    "notDeployedHint": "Run pnpm deploy:contracts for this network, then reload.",
+    "copied": "Copied",
+    "viewOnExplorer": "View on explorer",
+    "days": "{count, plural, one {# day} other {# days}}"
+  },
+  "connect": {
+    "button": "Connect wallet",
+    "title": "Connect a wallet",
+    "description": "Choose how you want to connect.",
+    "browserWallet": "Browser wallet",
+    "burner": "Burner wallet",
+    "burnerHint": "Created in this browser, for testing only.",
+    "openInMetaMask": "Open in MetaMask",
+    "openInMetaMaskHint": "Opens this page in the MetaMask app's browser.",
+    "failed": "Could not connect. Try again.",
+    "disconnect": "Disconnect",
+    "copyAddress": "Copy address",
+    "getTestFunds": "Get test funds",
+    "switchTo": "Switch to {network}"
+  },
+  "faucet": {
+    "funded": "Received {amount} {symbol}",
+    "sufficient": "Your balance is already enough.",
+    "limit": "This address has reached the faucet limit.",
+    "exhausted": "The faucet is empty.",
+    "failed": "Could not get test funds. Try again later."
+  },
+  "settings": {
+    "label": "Settings",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "language": "Language"
+  },
+  "tx": {
+    "confirmInWallet": "Confirm in your wallet",
+    "sending": "Sending",
+    "relayLimit": "Too many requests. Try again later.",
+    "relayExhausted": "Free sending is unavailable right now. Try again later.",
+    "waiting": "Waiting for confirmation",
+    "confirmed": "Confirmed",
+    "view": "View",
+    "rejected": "Request rejected",
+    "insufficientFunds": "Not enough funds to pay for gas",
+    "reverted": "Transaction reverted",
+    "revertedWith": "Reverted: {reason}",
+    "failed": "Something went wrong. Try again later.",
+    "cancelled": "Transaction cancelled",
+    "untitled": "Transaction"
+  },
+  "activity": {
+    "settled": {
+      "confirmed": "{title}: confirmed",
+      "reverted": "{title}: failed",
+      "replaced": "{title}: replaced"
+    }
+  },
+  "states": {
+    "notFound": "Page not found",
+    "notFoundHint": "The link may be wrong, or the page has moved.",
+    "home": "Go home",
+    "error": "Something went wrong on this page",
+    "errorHint": "Try once more.",
+    "retry": "Try again",
+    "loadFailed": "Could not load"
+  }
+}
