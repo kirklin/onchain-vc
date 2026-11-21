@@ -254,7 +254,8 @@ test("lists every pitch in the portfolio, filtered by outcome", async ({ page })
   await page.getByRole("radio", { name: "In progress" }).click();
   const reviewing = await deals.locator("li").count();
   await page.getByRole("radio", { name: "All" }).click();
-  expect(reviewing).toBeLessThanOrEqual(await deals.locator("li").count());
+  // The list is drawn again after the click, so it is counted once it has been.
+  await expect.poll(() => deals.locator("li").count()).toBeGreaterThanOrEqual(reviewing);
   expect(all).toBeGreaterThan(0);
   await page.getByRole("radio", { name: "In progress" }).click();
   await deals.locator("li").first().getByRole("link").click();
