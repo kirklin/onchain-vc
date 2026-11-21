@@ -227,7 +227,7 @@ function AcceptTerms({ deal, terms, expired }: { deal: Deal; terms: { firstTranc
         {t("offer")}
         {" "}
         <Money value={deal.amount} className="font-semibold" />
-        {terms !== null && `，${t("offerFirst", { percent: terms.firstTranchePercent })}`}
+        {terms !== null && t("offerFirst", { percent: terms.firstTranchePercent })}
       </p>
       <p className="text-sm text-muted-foreground">
         {t.rich("acceptWithin", { countdown: () => <Countdown until={deal.deadline} /> })}

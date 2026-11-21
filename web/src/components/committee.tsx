@@ -169,7 +169,7 @@ function VoteLine({ inFavour, score, note }: { inFavour: boolean; score: number;
       {note !== undefined && note.transactionHash === null && <span className="text-muted-foreground">{t("sending")}</span>}
       {note?.transactionHash !== null && note !== undefined && (
         <span className="flex items-center gap-2 text-muted-foreground">
-          {t("onChain", { seconds: ((note.confirmMs ?? 0) / 1000).toFixed(1) })}
+          {t("onChain", { ms: note.confirmMs ?? 0 })}
           <TransactionLink hash={note.transactionHash} />
         </span>
       )}
@@ -219,7 +219,7 @@ export function PartnerPanel({ role, round, meeting, ballot, size = "default" }:
           <p className={cn("leading-relaxed text-pretty", size === "screen" ? "text-lg" : "text-[15px]")}>{analysis.text}</p>
           {analysis.transactionHash !== null && (
             <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="opinion-on-chain">
-              {t("onChain", { seconds: ((analysis.confirmMs ?? 0) / 1000).toFixed(1) })}
+              {t("onChain", { ms: analysis.confirmMs ?? 0 })}
               <TransactionLink hash={analysis.transactionHash} />
             </p>
           )}
@@ -257,7 +257,9 @@ export function PartnerPanel({ role, round, meeting, ballot, size = "default" }:
 function Activity({ speech, voted, spoke }: { speech: LiveSpeech | undefined; voted: boolean; spoke: boolean }) {
   const t = useTranslations("meeting");
   let label: string;
-  if (speech !== undefined) {
+  if (speech?.activity === "reading" && speech.phase === "vote") {
+    label = t("readingViews");
+  } else if (speech !== undefined) {
     label = speech.activity === "tool" && speech.tool !== undefined ? t("usingTool", { tool: speech.tool }) : t(`activity.${speech.activity}`);
   } else if (voted) {
     label = t("voted");
