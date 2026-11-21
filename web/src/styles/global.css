@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./theme.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans:
+    "Geist Variable", ui-sans-serif, system-ui, -apple-system, "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Body text sits a little above regular and headings a little above semibold. */
+  --font-weight-normal: 450;
+  --font-weight-medium: 550;
+  --font-weight-semibold: 650;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply min-h-dvh bg-background font-sans font-normal text-foreground antialiased;
+  }
+  ::selection {
+    background: var(--fill-strong);
+  }
+}
+
+/* The type scale. Large sizes are set tight, with matching negative tracking. */
+@utility text-display {
+  font-size: clamp(2.75rem, 7vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 650;
+}
+
+@utility text-title {
+  font-size: 2rem;
+  line-height: 2.25rem;
+  letter-spacing: -0.02em;
+  font-weight: 650;
+}
+
+@utility text-heading {
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+  letter-spacing: -0.015em;
+  font-weight: 650;
+}
+
+@utility text-figure {
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A bordered panel on the page background. */
+@utility surface {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  background: var(--background);
+}
+
+/* A borderless tinted area, for inputs and read-outs. */
+@utility well {
+  border-radius: var(--radius-xl);
+  background: var(--fill);
+  transition: box-shadow 150ms;
+  &:focus-within {
+    box-shadow: inset 0 0 0 1.5px var(--foreground);
+  }
+}
