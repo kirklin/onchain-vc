@@ -1,4 +1,5 @@
-import { bigint, boolean, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+import { Buffer } from "node:buffer";
+import { bigint, boolean, customType, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
  * The app's tables. After changing this file run `pnpm db:generate`, which writes the SQL
@@ -56,3 +57,17 @@ export const meetingNotes = pgTable("meeting_notes", {
   confirmMs: integer(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 }, table => [primaryKey({ columns: [table.chainId, table.dealId, table.round, table.phase, table.role] })]);
+
+/** Raw bytes. A Postgres server hands them back as a Buffer and PGlite as a Uint8Array. */
+const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType: () => "bytea",
+  toDriver: value => Buffer.from(value),
+  fromDriver: value => new Uint8Array(value),
+});
+
+/** Pitches, reports, opinions and terms by their CID, where every instance that shares the database finds them. */
+export const files = pgTable("files", {
+  cid: text().primaryKey(),
+  bytes: bytea().notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});

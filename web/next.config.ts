@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
   // PGlite loads its WebAssembly and data files from its own folder at run time, and pi-ai
   // loads each provider's API on first use through imports a bundler cannot follow.
   serverExternalPackages: ["@electric-sql/pglite", "@earendil-works/pi-ai", "@earendil-works/pi-agent-core", "@earendil-works/pi-schema"],
+  // The server reads its SQL migrations from disk when it opens the database. Nothing imports
+  // them, so a host that ships only traced files has to be told to take them along.
+  outputFileTracingIncludes: { "/*": ["./drizzle/**/*"] },
   headers: async () => [
     {
       source: "/(.*)",

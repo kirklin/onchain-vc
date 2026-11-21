@@ -1,10 +1,14 @@
+import type { Database } from "./db";
 import { Buffer } from "node:buffer";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { eq } from "drizzle-orm";
 import { CID } from "multiformats/cid";
 import * as raw from "multiformats/codecs/raw";
 import { sha256 } from "multiformats/hashes/sha2";
+import { database } from "./db";
+import { files } from "./db/schema";
 import { serverEnv } from "./env";
 
 /**
@@ -120,15 +124,55 @@ export class KuboFileStore implements FileStore {
   }
 }
 
+/**
+ * Keeps files in the app's database. Instances that share a database then share its files
+ * too, which a directory on one of their machines would not give them.
+ */
+export class DatabaseFileStore implements FileStore {
+  readonly #database: () => Promise<Database>;
+
+  constructor(open: () => Promise<Database>) {
+    this.#database = open;
+  }
+
+  async put(bytes: Uint8Array): Promise<string> {
+    assertStorable(bytes);
+    const cid = await cidOf(bytes);
+    const db = await this.#database();
+    await db.insert(files).values({ cid, bytes }).onConflictDoNothing();
+    return cid;
+  }
+
+  async get(cid: string): Promise<Uint8Array | undefined> {
+    if (!isCid(cid)) {
+      return undefined;
+    }
+    const db = await this.#database();
+    const [stored] = await db.select({ bytes: files.bytes }).from(files).where(eq(files.cid, cid));
+    return stored?.bytes;
+  }
+}
+
 // One store per process. Stored on globalThis so dev-server reloads keep it.
 const holder = globalThis as typeof globalThis & { onchainVcFileStore?: FileStore };
 
-/** The app's file store: the IPFS node named by IPFS_API_URL, or a directory under web/.data without one. */
-export function fileStore(): FileStore {
-  const { ipfsApiUrl } = serverEnv();
-  holder.onchainVcFileStore ??= ipfsApiUrl === undefined
+function configuredStore(): FileStore {
+  const { ipfsApiUrl, databaseUrl } = serverEnv();
+  if (ipfsApiUrl !== undefined) {
+    return new KuboFileStore(ipfsApiUrl);
+  }
+  // A Postgres server is what several instances share, so their files go where they all look.
+  return databaseUrl === undefined
     ? new DiskFileStore(path.join(process.cwd(), ".data", "files"))
-    : new KuboFileStore(ipfsApiUrl);
+    : new DatabaseFileStore(database);
+}
+
+/**
+ * The app's file store: the IPFS node named by IPFS_API_URL, or else the Postgres server
+ * named by DATABASE_URL, or with neither a directory under web/.data.
+ */
+export function fileStore(): FileStore {
+  holder.onchainVcFileStore ??= configuredStore();
   return holder.onchainVcFileStore;
 }
 

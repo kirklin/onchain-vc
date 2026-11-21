@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { describe, expect, it } from "vitest";
-import { cidOf, DiskFileStore, isCid, KuboFileStore, MAX_FILE_BYTES, sniffContentType } from "~/server/files";
+import { openDatabase } from "~/server/db";
+import { cidOf, DatabaseFileStore, DiskFileStore, isCid, KuboFileStore, MAX_FILE_BYTES, sniffContentType } from "~/server/files";
 
 const encoder = new TextEncoder();
 // The CID a Kubo node gives these fourteen bytes when asked to store them as a raw block.
@@ -67,6 +68,20 @@ describe("disk file store", () => {
     await store.put(HELLO);
 
     expect(await readdir(path.join(directory, "nested", "files"))).toEqual([cid]);
+  });
+});
+
+describe("database file store", () => {
+  const opened = openDatabase({});
+  storeSuite(async () => new DatabaseFileStore(() => opened));
+
+  it("gives two instances that share a database the same files", async () => {
+    const bytes = unique();
+
+    const cid = await new DatabaseFileStore(() => opened).put(bytes);
+
+    expect(await new DatabaseFileStore(() => opened).get(cid)).toEqual(bytes);
+    expect(cid).toBe(await new DiskFileStore(await mkdtemp(path.join(tmpdir(), "onchain-vc-files-"))).put(bytes));
   });
 });
 
