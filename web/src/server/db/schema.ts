@@ -54,7 +54,6 @@ export const meetingNotes = pgTable("meeting_notes", {
   terms: jsonb().$type<{ amount: number; firstTranchePercent: number; milestoneDays: number; milestone: string }>(),
   cid: text(),
   transactionHash: text(),
-  confirmMs: integer(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 }, table => [primaryKey({ columns: [table.chainId, table.dealId, table.round, table.phase, table.role] })]);
 

@@ -1,0 +1,1 @@
+ALTER TABLE "meeting_notes" DROP COLUMN "confirm_ms";

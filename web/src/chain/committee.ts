@@ -82,8 +82,6 @@ export interface Note {
   /** Where the written opinion or terms are kept. */
   cid: string | null;
   transactionHash: Hash | null;
-  /** How long the transaction took from sending to its receipt. */
-  confirmMs: number | null;
   createdAt: string;
 }
 

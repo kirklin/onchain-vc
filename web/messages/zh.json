@@ -110,7 +110,7 @@
     "against": "反对",
     "score": "{score}分",
     "sending": "正在上链",
-    "onChain": "已上链，用时{ms}毫秒",
+    "onChain": "已上链",
     "onChainOnly": "已在链上投票",
     "analysis": "初步意见",
     "leanInvest": "倾向投资",
@@ -173,9 +173,9 @@
     "chain": {
       "transactions": "链上交易",
       "blocks": "所在区块",
-      "confirm": "回执用时",
-      "fees": "手续费合计",
-      "ms": "{ms}毫秒"
+      "busiest": "最忙的区块",
+      "busiestCount": "{count}笔交易",
+      "fees": "手续费合计"
     },
     "available": "可投资金",
     "paidOut": "已打出",
@@ -416,8 +416,8 @@
     "bonds": "合伙人保证金",
     "transactions": "链上交易",
     "blocks": "所在区块",
-    "confirm": "回执用时",
-    "confirmUnit": "毫秒",
+    "busiest": "最忙的区块",
+    "busiestUnit": "笔交易",
     "fees": "手续费合计",
     "stepsTitle": "从路演到打款",
     "steps": {

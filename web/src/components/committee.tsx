@@ -169,7 +169,7 @@ function VoteLine({ inFavour, score, note }: { inFavour: boolean; score: number;
       {note !== undefined && note.transactionHash === null && <span className="text-muted-foreground">{t("sending")}</span>}
       {note?.transactionHash !== null && note !== undefined && (
         <span className="flex items-center gap-2 text-muted-foreground">
-          {t("onChain", { ms: note.confirmMs ?? 0 })}
+          {t("onChain")}
           <TransactionLink hash={note.transactionHash} />
         </span>
       )}
@@ -219,7 +219,7 @@ export function PartnerPanel({ role, round, meeting, ballot, size = "default" }:
           <p className={cn("leading-relaxed text-pretty", size === "screen" ? "text-lg" : "text-[15px]")}>{analysis.text}</p>
           {analysis.transactionHash !== null && (
             <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="opinion-on-chain">
-              {t("onChain", { ms: analysis.confirmMs ?? 0 })}
+              {t("onChain")}
               <TransactionLink hash={analysis.transactionHash} />
             </p>
           )}

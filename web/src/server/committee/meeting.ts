@@ -91,7 +91,6 @@ export async function notesOf(database: Database, chainId: number, dealId: numbe
     terms: row.terms,
     cid: row.cid,
     transactionHash: row.transactionHash as Hash | null,
-    confirmMs: row.confirmMs,
     createdAt: row.createdAt.toISOString(),
   }));
 }
@@ -110,11 +109,10 @@ async function saveNote(context: MeetingContext, note: Note) {
     terms: note.terms,
     cid: note.cid,
     transactionHash: note.transactionHash,
-    confirmMs: note.confirmMs,
     createdAt: new Date(note.createdAt),
   }).onConflictDoUpdate({
     target: [meetingNotes.chainId, meetingNotes.dealId, meetingNotes.round, meetingNotes.phase, meetingNotes.role],
-    set: { cid: note.cid, transactionHash: note.transactionHash, confirmMs: note.confirmMs },
+    set: { cid: note.cid, transactionHash: note.transactionHash },
   });
   context.bus.emit({ chainId: context.chainId, type: "note", note });
 }
@@ -296,7 +294,6 @@ function newNote(dealId: number, round: number, phase: Phase, role: RoleKey, fie
     terms: null,
     cid: null,
     transactionHash: null,
-    confirmMs: null,
     createdAt: new Date().toISOString(),
     ...fields,
   };
@@ -325,13 +322,12 @@ async function sendVote(context: MeetingContext, seat: Seat, dealId: number, not
   }
   const args = [BigInt(dealId), note.inFavour!, note.score!, note.cid!] as const;
   const gas = await context.client.estimateContractGas({ address: context.committee, abi: committeeAbi, functionName: "vote", args, account: seat.account });
-  const started = Date.now();
   const receipt = await seat.wallet.send({
     to: context.committee,
     data: encodeFunctionData({ abi: committeeAbi, functionName: "vote", args }),
     gas: gas + gas * BigInt(context.gasMarginPercent) / 100n,
   });
-  const sent = { ...note, transactionHash: receipt.transactionHash, confirmMs: Date.now() - started };
+  const sent = { ...note, transactionHash: receipt.transactionHash };
   await saveNote(context, sent);
   return sent;
 }
@@ -347,13 +343,12 @@ async function sendOpinion(context: MeetingContext, seat: Seat, dealId: number, 
   }
   const args = [BigInt(dealId), note.inFavour!, note.score!, note.cid!] as const;
   const gas = await context.client.estimateContractGas({ address: context.committee, abi: committeeAbi, functionName: "opine", args, account: seat.account });
-  const started = Date.now();
   const receipt = await seat.wallet.send({
     to: context.committee,
     data: encodeFunctionData({ abi: committeeAbi, functionName: "opine", args }),
     gas: gas + gas * BigInt(context.gasMarginPercent) / 100n,
   });
-  const sent = { ...note, transactionHash: receipt.transactionHash, confirmMs: Date.now() - started };
+  const sent = { ...note, transactionHash: receipt.transactionHash };
   await saveNote(context, sent);
   return sent;
 }
@@ -549,13 +544,12 @@ async function setTerms(context: MeetingContext, seat: Seat, deal: Deal, dealId:
 
   const args = [BigInt(dealId), parseUnits(String(terms.amount), context.asset.decimals), terms.firstTranchePercent * 100, terms.milestoneDays, cid] as const;
   const gas = await context.client.estimateContractGas({ address: context.committee, abi: committeeAbi, functionName: "offer", args, account: seat.account });
-  const started = Date.now();
   const receipt = await seat.wallet.send({
     to: context.committee,
     data: encodeFunctionData({ abi: committeeAbi, functionName: "offer", args }),
     gas: gas + gas * BigInt(context.gasMarginPercent) / 100n,
   });
-  await saveNote(context, { ...note, transactionHash: receipt.transactionHash, confirmMs: Date.now() - started });
+  await saveNote(context, { ...note, transactionHash: receipt.transactionHash });
 }
 
 /**

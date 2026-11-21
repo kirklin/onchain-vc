@@ -110,7 +110,7 @@
     "against": "Against",
     "score": "{score} points",
     "sending": "Going on chain",
-    "onChain": "On chain in {ms} ms",
+    "onChain": "On chain",
     "onChainOnly": "Voted on chain",
     "analysis": "First view",
     "leanInvest": "Leans to invest",
@@ -173,9 +173,9 @@
     "chain": {
       "transactions": "Transactions",
       "blocks": "Blocks",
-      "confirm": "Time to receipt",
-      "fees": "Fees in total",
-      "ms": "{ms} ms"
+      "busiest": "Busiest block",
+      "busiestCount": "{count, plural, one {# transaction} other {# transactions}}",
+      "fees": "Fees in total"
     },
     "available": "Available",
     "paidOut": "Paid out",
@@ -416,8 +416,8 @@
     "bonds": "Partner bonds",
     "transactions": "Transactions",
     "blocks": "Blocks",
-    "confirm": "Time to receipt",
-    "confirmUnit": "ms",
+    "busiest": "Busiest block",
+    "busiestUnit": "transactions",
     "fees": "Fees in total",
     "stepsTitle": "From pitch to payment",
     "steps": {

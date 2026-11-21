@@ -401,7 +401,6 @@ export interface ChainStats {
   busiestBlock: number;
   /** In wei of the chain's native token. */
   fees: bigint;
-  medianConfirmMs: number | null;
 }
 
 /** How much the app has put on the chain so far: transactions, the blocks they are in and their cost. */

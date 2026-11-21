@@ -254,7 +254,7 @@ function Numbers() {
         <SmallFigure label={t("bonds")} value={<CountedAmount value={amount(fund?.bonds)} />} unit={fund?.symbol} />
         <SmallFigure label={t("transactions")} value={<Counted value={stats?.transactions} />} />
         <SmallFigure label={t("blocks")} value={<Counted value={stats?.blocks} />} />
-        <SmallFigure label={t("confirm")} value={<Counted value={stats?.medianConfirmMs ?? undefined} />} unit={t("confirmUnit")} />
+        <SmallFigure label={t("busiest")} value={<Counted value={stats?.busiestBlock} />} unit={t("busiestUnit")} />
         <SmallFigure label={t("fees")} value={stats === undefined ? "—" : formatAmount(stats.fees, 18, 4)} unit={network?.chain.nativeCurrency.symbol} />
       </dl>
     </section>

@@ -321,7 +321,7 @@ function ChainNumbers() {
     <section className="grid grid-cols-2 gap-5 surface p-5" data-testid="chain-numbers">
       <Fact label={t("transactions")}>{stats === undefined ? "…" : format.number(stats.transactions)}</Fact>
       <Fact label={t("blocks")}>{stats === undefined ? "…" : format.number(stats.blocks)}</Fact>
-      <Fact label={t("confirm")}>{stats === undefined || stats.medianConfirmMs === null ? "—" : t("ms", { ms: stats.medianConfirmMs })}</Fact>
+      <Fact label={t("busiest")}>{stats === undefined ? "…" : t("busiestCount", { count: stats.busiestBlock })}</Fact>
       <Fact label={t("fees")}>{stats === undefined ? "…" : `${formatAmount(stats.fees, 18, 4)} ${symbol}`}</Fact>
     </section>
   );

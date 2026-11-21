@@ -65,7 +65,6 @@ describe.skipIf(url === undefined)("with a Postgres server", () => {
       terms: { amount: 300, firstTranchePercent: 40, milestoneDays: 30, milestone: "上线收款页面" },
       cid: "bafkreidemo",
       transactionHash: "0x01",
-      confirmMs: 420,
     });
 
     const [note] = await notesOf(database, testChain.id, 7);
@@ -75,7 +74,6 @@ describe.skipIf(url === undefined)("with a Postgres server", () => {
       role: "risk",
       terms: { amount: 300, firstTranchePercent: 40, milestoneDays: 30, milestone: "上线收款页面" },
       tools: [{ tool: "fund_status", input: {}, failed: false }],
-      confirmMs: 420,
     });
   });
 });
