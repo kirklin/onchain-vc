@@ -1,0 +1,29 @@
+# The app with an IPFS node for its files.
+#   docker compose up --build
+# Settings come from .env: see .env.example. NEXT_PUBLIC_ values are read at build time.
+services:
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_NETWORKS: ${NEXT_PUBLIC_NETWORKS:-local}
+        NEXT_PUBLIC_ENS: ${NEXT_PUBLIC_ENS:-off}
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      IPFS_API_URL: http://ipfs:5001
+    ports:
+      - "3000:3000"
+    depends_on:
+      ipfs:
+        condition: service_started
+
+  # Its RPC port stays inside this network. Only the web service talks to it.
+  ipfs:
+    image: ipfs/kubo:latest
+    volumes:
+      - ipfs:/data/ipfs
+
+volumes:
+  ipfs:

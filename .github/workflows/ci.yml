@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, types and tests
+    runs-on: ubuntu-latest
+    env:
+      TEST_IPFS_API_URL: http://127.0.0.1:5001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: pnpm install --frozen-lockfile
+
+      # The file store tests also run against an IPFS node. A service container cannot be
+      # given the `daemon --offline` arguments, so it is started here.
+      - name: Start an IPFS node
+        run: |
+          docker run -d --name kubo -p 127.0.0.1:5001:5001 ipfs/kubo:latest daemon --offline
+          timeout 60 sh -c 'until curl -sf -X POST http://127.0.0.1:5001/api/v0/version; do sleep 1; done'
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm typecheck:ts6
+      - name: Check contract formatting and lints
+        working-directory: contracts
+        run: |
+          forge fmt --check
+          forge lint
+      - run: pnpm test
+      - name: Test the contracts under Monad's rules
+        working-directory: contracts
+        run: FOUNDRY_PROFILE=monad forge test
