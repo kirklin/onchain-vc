@@ -6,13 +6,12 @@ import type { PitchDocument } from "~/chain/committee";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { formatUnits, getAddress, isAddress, parseUnits } from "viem";
-import { useBytecode, useConfig, useConnect, useConnection, useConnectors, useReadContract } from "wagmi";
+import { useBytecode, useConfig, useConnection, useReadContract } from "wagmi";
 import { readContract, writeContract } from "wagmi/actions";
-import { BURNER_CONNECTOR_ID } from "~/chain/burner/connector";
+import { useAutoConnect } from "~/chain/burner/use-auto-connect";
 import { isCommitteeText, MAX_NAME_BYTES } from "~/chain/committee";
-import { burnerAvailable } from "~/chain/config";
 import { useDeployment } from "~/chain/contracts";
 import { storeDocument, useFund } from "~/chain/deals";
 import { isDecimal } from "~/chain/format";
@@ -25,20 +24,6 @@ const MAX_SUMMARY = 140;
 const MAX_DESCRIPTION = 2000;
 const MAX_LINKS = 5;
 const DELEGATION_PREFIX = "0xef0100";
-
-/** Connects the in-browser wallet on its own, for visitors who arrive without one. */
-function useAutoConnect() {
-  const { status } = useConnection();
-  const connectors = useConnectors();
-  const { connect } = useConnect();
-  useEffect(() => {
-    const burner = connectors.find(connector => connector.id === BURNER_CONNECTOR_ID);
-    const hasWallet = typeof window !== "undefined" && "ethereum" in window;
-    if (status === "disconnected" && burnerAvailable && burner !== undefined && !hasWallet) {
-      connect({ connector: burner });
-    }
-  }, [status, connectors, connect]);
-}
 
 export function Pitch() {
   const t = useTranslations("pitch");

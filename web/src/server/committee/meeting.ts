@@ -336,6 +336,42 @@ async function sendVote(context: MeetingContext, seat: Seat, dealId: number, not
   return sent;
 }
 
+/**
+ * Puts the seat's first view on chain while the pitch is still under review. Every seat's
+ * view is there before the first vote, which is what shows they were formed apart.
+ */
+async function sendOpinion(context: MeetingContext, seat: Seat, dealId: number, note: Note): Promise<Note> {
+  const deal = await loadDeal(context, dealId);
+  if (STAGES[deal.stage] !== "review") {
+    return note;
+  }
+  const args = [BigInt(dealId), note.inFavour!, note.score!, note.cid!] as const;
+  const gas = await context.client.estimateContractGas({ address: context.committee, abi: committeeAbi, functionName: "opine", args, account: seat.account });
+  const started = Date.now();
+  const receipt = await seat.wallet.send({
+    to: context.committee,
+    data: encodeFunctionData({ abi: committeeAbi, functionName: "opine", args }),
+    gas: gas + gas * BigInt(context.gasMarginPercent) / 100n,
+  });
+  const sent = { ...note, transactionHash: receipt.transactionHash, confirmMs: Date.now() - started };
+  await saveNote(context, sent);
+  return sent;
+}
+
+/** The partner's first view, stored where anyone can read it by the CID its record on chain carries. */
+async function pinAnalysis(context: MeetingContext, seat: Seat, analysis: Omit<Note, "cid">): Promise<string> {
+  return pin(context, {
+    kind: "analysis",
+    chainId: context.chainId,
+    dealId: analysis.dealId,
+    role: seat.role,
+    partner: seat.account,
+    model: context.modelName,
+    profileHash: profileHash(seat.profile, context.modelName),
+    analysis: { text: analysis.text, leaning: analysis.inFavour === true ? "invest" : "pass", score: analysis.score, tools: analysis.tools },
+  });
+}
+
 /** The partner's written opinion, stored where anyone can read it by the CID the vote carries. */
 async function pinOpinion(context: MeetingContext, seat: Seat, analysis: Note | undefined, vote: Omit<Note, "cid">): Promise<string> {
   return pin(context, {
@@ -426,9 +462,10 @@ async function analyse(context: MeetingContext, seats: Seat[], deal: Deal, dealI
       research: researchTools(seat.role, toolContext(context, deal, dealId)),
       answer: opinionTool(),
     });
-    const note = newNote(dealId, 0, "analysis", seat.role, { text: answer.opinion, inFavour: answer.leaning === "invest", score: answer.score, tools });
+    const draft = newNote(dealId, 0, "analysis", seat.role, { text: answer.opinion, inFavour: answer.leaning === "invest", score: answer.score, tools });
+    const note = { ...draft, cid: await pinAnalysis(context, seat, draft) };
     await saveNote(context, note);
-    return note;
+    return sendOpinion(context, seat, dealId, note);
   }));
 }
 
@@ -532,7 +569,13 @@ export async function holdPitchMeeting(context: MeetingContext, seats: Seat[], d
     notes = [...notes, ...await analyse(context, unanalysed, deal, dealId, pitch)];
   }
 
-  // Votes already decided but not yet on chain are sent again; the rest are asked for.
+  // First views and votes already written but not yet on chain are sent again; the rest are asked for.
+  for (const note of notes.filter(item => item.phase === "analysis" && item.cid !== null && item.transactionHash === null)) {
+    const seat = voting.find(item => item.role === note.role);
+    if (seat !== undefined) {
+      await sendOpinion(context, seat, dealId, note);
+    }
+  }
   for (const note of notes.filter(item => item.phase === "vote" && item.transactionHash === null)) {
     const seat = voting.find(item => item.role === note.role);
     if (seat !== undefined) {

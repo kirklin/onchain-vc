@@ -28,6 +28,20 @@ export interface Network {
   faucet?: FaucetLimits;
   /** Present on chains where the app pays the gas of calls its users sign. See ~/server/relay.ts. */
   relay?: RelayLimits;
+  /** Present on chains where the app hands visitors a share of the fund. Never set it on a mainnet. */
+  join?: JoinLimits;
+  /**
+   * How many blocks an account waits after receiving native tokens before it can pay for
+   * gas with them. Monad's consensus checks balances against the state of three blocks ago.
+   */
+  spendDelayBlocks?: number;
+}
+
+export interface JoinLimits {
+  /** The shares each visitor receives, the same for all so that every one counts alike. */
+  shares: bigint;
+  /** Most visitors the app takes in, per server process. */
+  members: number;
 }
 
 export const DEFAULT_GAS_MARGIN_PERCENT = 20;
@@ -56,6 +70,10 @@ export interface FaucetLimits {
 
 function faucet(target: string, lowWater: string, perAddress: string, budget: string): FaucetLimits {
   return { target: parseEther(target), lowWater: parseEther(lowWater), perAddress: parseEther(perAddress), budget: parseEther(budget) };
+}
+
+function join(shares: string, members: number): JoinLimits {
+  return { shares: parseEther(shares), members };
 }
 
 /** `perSender` calls an hour for each signer, none above 400k gas, `budget` native tokens in all. */
@@ -93,7 +111,7 @@ const MONAD_VERIFIER = "https://sourcify-api-monad.blockvision.org/";
  * To support another EVM chain, add an entry here. Nothing else is chain-specific.
  */
 export const networks = {
-  local: { chain: local, batchIntervalMs: 0, faucet: faucet("1", "0.1", "10", "1000"), relay: relay(120, "100") },
+  local: { chain: local, batchIntervalMs: 0, faucet: faucet("1", "0.1", "10", "1000"), relay: relay(120, "100"), join: join("1000", 1000) },
   sepolia: { chain: sepolia, batchIntervalMs: 0, confirmations: 5, faucet: faucet("0.01", "0.002", "0.05", "1"), relay: relay(30, "0.5") },
   baseSepolia: { chain: baseSepolia, batchIntervalMs: 0, confirmations: 3, faucet: faucet("0.01", "0.002", "0.05", "1"), relay: relay(30, "0.5") },
   monadTestnet: {
@@ -115,8 +133,12 @@ export const networks = {
     // The public Monad endpoints refuse a log search wider than this.
     logRange: 100n,
     verifierUrl: MONAD_VERIFIER,
-    faucet: faucet("0.5", "0.1", "2", "50"),
+    // Enough for a visitor's own vetoes: the costliest, the one that carries, is billed
+    // for about 400k gas at up to twice the base fee.
+    faucet: faucet("0.1", "0.03", "0.5", "30"),
     relay: relay(30, "20"),
+    join: join("1000", 300),
+    spendDelayBlocks: 3,
   },
   mainnet: { chain: mainnet, batchIntervalMs: 0, confirmations: 5 },
   base: { chain: base, batchIntervalMs: 0, confirmations: 3 },

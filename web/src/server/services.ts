@@ -3,9 +3,10 @@ import type { ContractName } from "~/chain/contracts";
 import type { Network, NetworkName } from "~/chain/networks";
 import { createPublicClient, toFunctionSelector } from "viem";
 import { addressOn, contracts, relayed } from "~/chain/contracts";
-import { networks } from "~/chain/networks";
+import { DEFAULT_GAS_MARGIN_PERCENT, networks } from "~/chain/networks";
 import { serverEnv } from "./env";
 import { FaucetService } from "./faucet";
+import { JoinService } from "./join";
 import { gatewayTransport, Operator } from "./operator";
 import { RelayService } from "./relay";
 import { RpcGateway } from "./rpc-gateway";
@@ -21,6 +22,8 @@ export interface ChainServices {
   faucet: FaucetService | undefined;
   /** Present when the network has relay limits, an operator, and a deployed Forwarder contract. */
   relay: RelayService | undefined;
+  /** Present when the network takes visitors into the fund, with an operator and a deployed Fund. */
+  join: JoinService | undefined;
 }
 
 // One set per chain per process. Stored on globalThis so dev-server reloads keep the queues and caches.
@@ -52,7 +55,13 @@ function create(name: NetworkName): ChainServices {
     ? undefined
     : new RelayService({ operator, forwarder, targets: relayTargets(chain.id), ...network.relay });
 
-  return { name, network, gateway, client, operator, faucet, relay };
+  const fund = addressOn("Fund", chain.id);
+  const token = addressOn("Token", chain.id);
+  const join = network.join === undefined || operator === undefined || fund === undefined || token === undefined
+    ? undefined
+    : new JoinService({ operator, fund, token, faucet, gasMarginPercent: network.gasMarginPercent ?? DEFAULT_GAS_MARGIN_PERCENT, ...network.join });
+
+  return { name, network, gateway, client, operator, faucet, relay, join };
 }
 
 /** The addresses and selectors of everything listed in `relayed` that is deployed on the chain. */

@@ -13,7 +13,7 @@ export type StageKey = (typeof STAGES)[number];
 export const QUORUM = 3;
 
 /** The events that make up a deal's history, by the names the indexer stores them under. */
-export const DEAL_EVENTS = ["Pitched", "Voted", "StageChanged", "Offered", "Paid", "MilestoneSubmitted", "Returned", "Slashed", "MotionOpened"] as const;
+export const DEAL_EVENTS = ["Pitched", "Opined", "Voted", "StageChanged", "Offered", "Paid", "MilestoneSubmitted", "Returned", "Slashed", "MotionOpened", "MotionSupported"] as const;
 
 /** Stages in which investors can still veto the deal. */
 export const VETOABLE: readonly StageKey[] = ["approved", "offered", "funded", "milestone"];

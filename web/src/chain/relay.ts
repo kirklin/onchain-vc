@@ -9,6 +9,7 @@ import { forwarderAbi } from "~/contracts/abis";
 import { networkOf } from "./config";
 import { addressOn } from "./contracts";
 import { forwardRequestTypedData } from "./forward";
+import { DEFAULT_GAS_MARGIN_PERCENT } from "./networks";
 import { deadlineIn } from "./permit";
 
 type Mutability = "nonpayable" | "payable";
@@ -58,11 +59,13 @@ export function useRelay() {
     // Estimated the way the target will see the call: from the Forwarder, with the signer
     // appended. A call that would revert fails here, with the contract's own error.
     const estimate = await estimateContractGas(getPublicClient(config, { chainId })!, { ...rest, address: to, account: forwarder, dataSuffix: from });
+    // The relayer is billed for this limit on chains that charge the limit, so the margin is the chain's own.
+    const margin = BigInt(networkOf(chainId)?.gasMarginPercent ?? DEFAULT_GAS_MARGIN_PERCENT);
     const request: ForwardRequest = {
       from,
       to,
       value: 0n,
-      gas: estimate + estimate / 5n,
+      gas: estimate + estimate * margin / 100n,
       deadline: Number(deadlineIn(REQUEST_LIFETIME_SECONDS)),
       data: encodeFunctionData(rest),
     };

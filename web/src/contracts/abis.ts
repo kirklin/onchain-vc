@@ -394,6 +394,18 @@ export const committeeAbi = [
   {
     type: 'function',
     inputs: [
+      { name: 'dealId', internalType: 'uint256', type: 'uint256' },
+      { name: 'inFavour', internalType: 'bool', type: 'bool' },
+      { name: 'score', internalType: 'uint8', type: 'uint8' },
+      { name: 'uri', internalType: 'string', type: 'string' },
+    ],
+    name: 'opine',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [
       { name: 'project', internalType: 'address', type: 'address' },
       { name: 'ask', internalType: 'uint128', type: 'uint128' },
       { name: 'name', internalType: 'string', type: 'string' },
@@ -613,6 +625,34 @@ export const committeeAbi = [
       { name: 'uri', internalType: 'string', type: 'string', indexed: false },
     ],
     name: 'Offered',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'dealId',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: true,
+      },
+      {
+        name: 'role',
+        internalType: 'enum Committee.Role',
+        type: 'uint8',
+        indexed: false,
+      },
+      {
+        name: 'partner',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      { name: 'inFavour', internalType: 'bool', type: 'bool', indexed: false },
+      { name: 'score', internalType: 'uint8', type: 'uint8', indexed: false },
+      { name: 'uri', internalType: 'string', type: 'string', indexed: false },
+    ],
+    name: 'Opined',
   },
   {
     type: 'event',
@@ -862,7 +902,7 @@ export const committeeAbi = [
  *
  */
 export const committeeAddress = {
-  31337: '0x5538111dF114A80475a6b120aC73cD8d533EFBD4',
+  31337: '0x1474a535eE7d3FAfAbaf6B757F948bD1ee0D1a05',
 } as const
 
 /**
@@ -2029,7 +2069,7 @@ export const fundAbi = [
  *
  */
 export const fundAddress = {
-  31337: '0x01153646d972a5573b7daF338a6AbE4323227249',
+  31337: '0xCA4ec652901DEB7Fe1b849aEE91135BBD4296e80',
 } as const
 
 /**
@@ -2382,7 +2422,7 @@ export const portfolioBadgeAbi = [
  *
  */
 export const portfolioBadgeAddress = {
-  31337: '0x76fc83651F072bFE1a2211ea1412D7B126ac1Bf6',
+  31337: '0x270E33Ce99eF74E62115674bC2B8D93839f99b87',
 } as const
 
 /**

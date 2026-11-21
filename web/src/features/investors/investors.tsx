@@ -164,7 +164,7 @@ function Redeem({ investor }: { investor: Address }) {
 }
 
 /** Deals still open to a veto, each with the motion against it, if there is one. */
-function Vetoes({ investor }: { investor: Address }) {
+export function Vetoes({ investor }: { investor: Address }) {
   const t = useTranslations("investors");
   const { deals } = useDeals();
   const open = (deals ?? []).filter(deal => VETOABLE.includes(deal.stage));
@@ -182,13 +182,19 @@ function VetoRow({ deal, investor }: { deal: Deal; investor: Address }) {
   const fund = useDeployment("Fund")!;
   const { write, pending } = useTransact();
   const { data: motionId, refetch } = useReadContract({ ...fund, functionName: "vetoMotionOf", args: [BigInt(deal.id)] });
-  const { data: weight } = useReadContract({ ...fund, functionName: "getPastVotes", args: [investor, deal.approvedAt] });
+  // The fund answers for a block only once a later one exists, so the weight is asked for again as blocks come.
+  const { data: weight, refetch: refetchWeight } = useReadContract({ ...fund, functionName: "getPastVotes", args: [investor, deal.approvedAt] });
   const motion = useMotion(motionId === undefined || motionId === 0n ? undefined : motionId, investor);
-  useOnBlock(() => void refetch());
+  useOnBlock(() => {
+    void refetch();
+    if (weight === undefined) {
+      void refetchWeight();
+    }
+  });
   const now = useChainNow();
 
   const open = motion !== undefined && !motion.carried && motion.deadline > now;
-  const errors = { NoWeight: t("noWeight"), AlreadySupported: t("alreadySupported"), NotVetoable: t("notVetoable") };
+  const errors = { NoWeight: t("noWeight"), AlreadySupported: t("alreadySupported"), NotVetoable: t("notVetoable"), MotionPending: t("motionPending") };
 
   return (
     <li className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between" data-testid="veto" data-deal={deal.id}>

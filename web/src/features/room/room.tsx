@@ -1,14 +1,19 @@
 "use client";
 
+import type { Address } from "viem";
 import type { Note } from "~/chain/committee";
 import type { Deal, Meeting } from "~/chain/deals";
 import { cn } from "cn";
 import { ArrowRightIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useMemo, useSyncExternalStore } from "react";
+import { useChainId } from "wagmi";
 import { ROLES } from "~/chain/committee";
-import { useBallots, useDeals, useDocument, useFund, useMeetings, useNotes } from "~/chain/deals";
+import { networkOf } from "~/chain/config";
+import { useBallots, useDeals, useDocument, useEvents, useFund, useMeetings, useNotes, useSeats, useStats, useVetoMotion } from "~/chain/deals";
+import { formatAmount, shortAddress } from "~/chain/format";
+import { useChainNow } from "~/chain/live";
 import { Money, PartnerPanel, PhaseLine, StageBadge, TransactionLink, VoteDots } from "~/components/committee";
 import { AccountAvatar, AccountName } from "~/components/identity";
 import { QrCode } from "~/components/qr-code";
@@ -16,6 +21,9 @@ import { StateNotice } from "~/components/states";
 import { Button } from "~/components/ui/button";
 
 type Variant = "page" | "screen";
+
+/** How long the table stays on a deal after an investor last backed a veto of it. */
+const VETO_FOCUS_MS = 2 * 60 * 1000;
 
 const subscribeNothing = () => () => {};
 
@@ -34,12 +42,22 @@ export function Room({ variant = "page" }: { variant?: Variant }) {
   const { deals, loading } = useDeals();
   const { meetings } = useMeetings();
 
-  // The meeting under way the longest, or else the newest pitch.
+  const { data: opened } = useEvents({ names: ["MotionOpened"], limit: 20 });
+  const { data: supported } = useEvents({ names: ["MotionSupported"], limit: 1 });
+  const now = useChainNow();
+  // The deal of the motion that last gained support, while that is still fresh.
+  const stirred = supported?.[0];
+  const motion = stirred === undefined ? undefined : opened?.find(event => String(event.args.motionId) === String(stirred.args.motionId));
+  const contestedId = stirred !== undefined && motion !== undefined && motion.dealId !== null && now.getTime() - new Date(stirred.timestamp).getTime() < VETO_FOCUS_MS
+    ? motion.dealId
+    : undefined;
+
+  // The deal investors have just moved to veto, or the meeting under way the longest, or else the newest pitch.
   const focus = useMemo(() => {
     const active = [...meetings.values()].filter(meeting => meeting.phase !== null).map(meeting => meeting.dealId).sort((left, right) => left - right);
-    const id = active[0] ?? deals?.[0]?.id;
+    const id = contestedId ?? active[0] ?? deals?.[0]?.id;
     return deals?.find(deal => deal.id === id);
-  }, [meetings, deals]);
+  }, [meetings, deals, contestedId]);
 
   const screen = variant === "screen";
 
@@ -59,8 +77,12 @@ export function Room({ variant = "page" }: { variant?: Variant }) {
           : <Table deal={focus} live={meetings.get(focus.id)} variant={variant} />}
       </section>
       <aside className="flex min-w-0 flex-col gap-6">
-        <PitchCode variant={variant} />
+        <div className={cn("grid grid-cols-2 gap-4", !screen && "hidden lg:grid")}>
+          <ScanCode path="/pitch" title={t("scanToPitch")} />
+          <ScanCode path="/join" title={t("scanToJoin")} />
+        </div>
         <FundFacts deals={deals} />
+        <ChainNumbers />
         <Queue deals={deals} focus={focus?.id} />
         <Recent deals={deals} focus={focus?.id} />
       </aside>
@@ -141,6 +163,7 @@ function Table({ deal, live, variant }: { deal: Deal; live: Meeting | undefined;
       {(terms !== undefined || drafting !== undefined) && round === 0 && (
         <TermsCard note={terms} drafting={drafting?.text} />
       )}
+      <VetoMeter deal={deal} />
       <Outcome deal={deal} />
     </div>
   );
@@ -219,16 +242,87 @@ function Outcome({ deal }: { deal: Deal }) {
   );
 }
 
-/** The code a phone scans to open the pitch page. */
-function PitchCode({ variant }: { variant: Variant }) {
-  const t = useTranslations("room");
+/** A code a phone scans to open one of the app's pages: the pitch form, or the way into the fund. */
+function ScanCode({ path, title }: { path: string; title: string }) {
   const origin = useOrigin();
-  const url = `${origin}/pitch`;
+  const url = `${origin}${path}`;
   return (
-    <section className={cn("flex flex-col items-center gap-4 surface p-6 text-center", variant === "page" && "hidden lg:flex")}>
-      <h2 className="text-heading">{t("scanToPitch")}</h2>
-      {origin === "" ? <div className="aspect-square w-full max-w-60 rounded-xl bg-fill" /> : <QrCode value={url} label={t("scanToPitch")} className="w-full max-w-60" />}
-      <p className="font-mono text-sm break-all text-muted-foreground">{url}</p>
+    <section className="flex flex-col items-center gap-3 surface p-4 text-center">
+      <h2 className="text-[15px] font-semibold">{title}</h2>
+      {origin === "" ? <div className="aspect-square w-full rounded-xl bg-fill" /> : <QrCode value={url} label={title} className="w-full" />}
+      <p className="font-mono text-xs break-all text-muted-foreground">{url}</p>
+    </section>
+  );
+}
+
+/**
+ * The veto investors have moved against the deal: how much of the needed weight is behind
+ * it, and once it carries, what went back to the fund and what the approving partners lost.
+ */
+function VetoMeter({ deal }: { deal: Deal }) {
+  const t = useTranslations("room.veto");
+  const tRoles = useTranslations("roles");
+  const motion = useVetoMotion(deal.id);
+  const seats = useSeats();
+  const now = useChainNow();
+  const { data: supports } = useEvents({ names: ["MotionSupported"], limit: 200 });
+  const { data: aftermath } = useEvents({ dealId: deal.id, names: ["Returned", "Slashed"], limit: 10 });
+  if (motion === undefined || (!motion.carried && motion.deadline <= now)) {
+    return null;
+  }
+  const supporters = (supports ?? []).filter(event => String(event.args.motionId) === motion.id.toString()).length;
+  const returned = aftermath?.find(event => event.name === "Returned");
+  const slashed = (aftermath ?? []).filter(event => event.name === "Slashed");
+
+  return (
+    <section className="flex flex-col gap-4 rounded-2xl bg-destructive-fill p-5" data-testid="veto-meter" data-carried={motion.carried}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h3 className="text-heading text-destructive">{motion.carried ? t("carried") : t("open")}</h3>
+        <p className="text-[15px] font-semibold tabular-nums">{t("supporters", { count: supporters })}</p>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-fill-strong" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={motion.percent} aria-label={t("open")}>
+        <div className="h-full rounded-full bg-destructive transition-[width] duration-300" style={{ width: `${motion.percent}%` }} />
+      </div>
+      <p className="text-[15px] text-muted-foreground">{t("progress", { percent: motion.percent })}</p>
+      {motion.carried && (
+        <ul className="flex flex-col gap-1.5 text-[15px] font-semibold">
+          {returned !== undefined && (
+            <li className="flex items-center justify-between gap-4">
+              <span>{t("returned")}</span>
+              <Money value={BigInt(String(returned.args.amount))} />
+            </li>
+          )}
+          {slashed.map((event) => {
+            const seat = seats?.find(item => item.account === event.account);
+            return (
+              <li key={`${event.transactionHash}:${String(event.args.partner)}`} className="flex items-center justify-between gap-4 text-destructive">
+                <span>{t("slashed", { partner: seat === undefined ? shortAddress(String(event.args.partner) as Address) : tRoles(seat.role) })}</span>
+                <span>
+                  −
+                  <Money value={BigInt(String(event.args.amount))} />
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** What the app has put on the chain so far, counted from the index and the receipts. */
+function ChainNumbers() {
+  const t = useTranslations("room.chain");
+  const format = useFormatter();
+  const chainId = useChainId();
+  const { data: stats } = useStats();
+  const symbol = networkOf(chainId)?.chain.nativeCurrency.symbol ?? "";
+  return (
+    <section className="grid grid-cols-2 gap-5 surface p-5" data-testid="chain-numbers">
+      <Fact label={t("transactions")}>{stats === undefined ? "…" : format.number(stats.transactions)}</Fact>
+      <Fact label={t("blocks")}>{stats === undefined ? "…" : format.number(stats.blocks)}</Fact>
+      <Fact label={t("confirm")}>{stats === undefined || stats.medianConfirmMs === null ? "—" : t("ms", { ms: stats.medianConfirmMs })}</Fact>
+      <Fact label={t("fees")}>{stats === undefined ? "…" : `${formatAmount(stats.fees, 18, 4)} ${symbol}`}</Fact>
     </section>
   );
 }

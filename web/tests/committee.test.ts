@@ -46,6 +46,7 @@ function services(): ChainServices {
     operator: new Operator({ key, chain: testChain, gateway }),
     faucet: undefined,
     relay: undefined,
+    join: undefined,
   };
 }
 

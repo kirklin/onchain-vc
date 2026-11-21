@@ -15,6 +15,7 @@ import { chainServices } from "./services";
 const ACCOUNT_ARGUMENT: Record<string, string> = {
   Pitched: "founder",
   Paid: "founder",
+  Opined: "partner",
   Voted: "partner",
   Slashed: "partner",
   ProfileSet: "partner",

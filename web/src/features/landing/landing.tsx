@@ -15,8 +15,8 @@ import { useBlockNumber, useChainId } from "wagmi";
 import { DEAL_EVENTS, QUORUM, ROLES } from "~/chain/committee";
 import { networkOf } from "~/chain/config";
 import { addressOn } from "~/chain/contracts";
-import { useBallots, useDeals, useEvents, useFund, useMeetings, useSeats } from "~/chain/deals";
-import { shortAddress } from "~/chain/format";
+import { useBallots, useDeals, useEvents, useFund, useMeetings, useSeats, useStats } from "~/chain/deals";
+import { formatAmount, shortAddress } from "~/chain/format";
 import { isPushed, useChainNow } from "~/chain/live";
 import { EventText, Money, TransactionLink, VoteDots } from "~/components/committee";
 import { NAV_LINKS } from "~/components/nav";
@@ -228,6 +228,8 @@ function Numbers() {
   const { data: block } = useBlockNumber({ watch: { poll: !isPushed(chainId) } });
   const fund = useFund();
   const { deals } = useDeals();
+  const { data: stats } = useStats();
+  const network = networkOf(chainId);
   const backed = deals?.filter(deal => deal.paid > 0n);
   const amount = (value: bigint | undefined) => fund === undefined || value === undefined ? undefined : Number(formatUnits(value, fund.decimals));
 
@@ -249,6 +251,10 @@ function Numbers() {
         <SmallFigure label={t("backed")} value={<Counted value={backed?.length} />} />
         <SmallFigure label={t("paidOut")} value={<CountedAmount value={amount(backed?.reduce((sum, deal) => sum + deal.paid, 0n))} />} unit={fund?.symbol} />
         <SmallFigure label={t("bonds")} value={<CountedAmount value={amount(fund?.bonds)} />} unit={fund?.symbol} />
+        <SmallFigure label={t("transactions")} value={<Counted value={stats?.transactions} />} />
+        <SmallFigure label={t("blocks")} value={<Counted value={stats?.blocks} />} />
+        <SmallFigure label={t("confirm")} value={<Counted value={stats?.medianConfirmMs ?? undefined} />} unit={t("confirmUnit")} />
+        <SmallFigure label={t("fees")} value={stats === undefined ? "—" : formatAmount(stats.fees, 18, 4)} unit={network?.chain.nativeCurrency.symbol} />
       </dl>
     </section>
   );
@@ -361,9 +367,9 @@ function PartnerCell({ role, seat }: { role: RoleKey; seat: Seat | undefined }) 
 const FILTERS = {
   all: DEAL_EVENTS.filter(name => name !== "StageChanged"),
   founder: ["Pitched", "MilestoneSubmitted"],
-  vote: ["Voted"],
+  vote: ["Opined", "Voted"],
   money: ["Offered", "Paid", "Returned"],
-  veto: ["MotionOpened", "Slashed"],
+  veto: ["MotionOpened", "MotionSupported", "Slashed"],
 } as const satisfies Record<string, readonly (typeof DEAL_EVENTS)[number][]>;
 type Filter = keyof typeof FILTERS;
 

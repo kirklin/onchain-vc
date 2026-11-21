@@ -388,6 +388,41 @@ contract CommitteeTest is FundSetup {
         _vote(Committee.Role.Product, 99, true);
     }
 
+    // ---------------------------------------------------------------- first views
+
+    function test_opine_recordsAPartnersFirstViewWithoutCountingIt() public {
+        uint256 dealId = _pitch(500e18);
+        vm.expectEmit(address(committee));
+        emit Committee.Opined(dealId, Committee.Role.Technology, partners[1], true, 72, URI);
+        vm.prank(partners[1]);
+        committee.opine(dealId, true, 72, URI);
+
+        Committee.Deal memory deal = committee.getDeal(dealId);
+        assertEq(deal.inFavour, 0);
+        assertEq(uint8(deal.stage), uint8(Committee.Stage.Review));
+        assertFalse(committee.getBallots(dealId, 0)[1].cast);
+    }
+
+    function test_opine_isForSeatedPartnersWhileThePitchIsUnderReview() public {
+        uint256 dealId = _pitch(500e18);
+        vm.expectRevert(Committee.NotAPartner.selector);
+        vm.prank(bob);
+        committee.opine(dealId, true, 50, URI);
+
+        vm.expectRevert(Committee.InvalidScore.selector);
+        vm.prank(partners[0]);
+        committee.opine(dealId, true, 101, URI);
+
+        vm.expectRevert(Committee.UnknownDeal.selector);
+        vm.prank(partners[0]);
+        committee.opine(99, true, 50, URI);
+
+        _approve(dealId);
+        vm.expectRevert(Committee.WrongStage.selector);
+        vm.prank(partners[3]);
+        committee.opine(dealId, false, 30, URI);
+    }
+
     // ---------------------------------------------------------------- terms
 
     function test_offer_setsTheTermsAndDrawsTheMoneyFromTheFund() public {

@@ -18,8 +18,12 @@ import { holdMilestoneMeeting, holdPitchMeeting, loadDeal } from "./meeting";
 import { partnerModel } from "./models";
 import { profileHash, profileOf } from "./profiles";
 
-/** Meetings held at the same time. Each one keeps up to four model streams open. */
-const CONCURRENCY = 4;
+/**
+ * Meetings held at the same time, so that a room of founders pitching together is heard
+ * together. Each meeting keeps up to four model streams open, and its votes touch only its
+ * own deal, so the chain takes them side by side.
+ */
+const CONCURRENCY = 32;
 /** What a partner's gas balance is raised to on live chains, and when. */
 const GAS_TARGET = parseEther("0.5");
 const GAS_LOW = parseEther("0.2");

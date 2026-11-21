@@ -60,6 +60,7 @@ describe.runIf(enabled)("a meeting with real partners", () => {
       operator: new Operator({ key, chain: testChain, gateway }),
       faucet: undefined,
       relay: undefined,
+      join: undefined,
     };
     meeting = {
       chainId: testChain.id,

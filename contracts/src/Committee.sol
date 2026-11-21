@@ -152,6 +152,7 @@ contract Committee is ERC2771Context, ReentrancyGuardTransient {
         uint256 indexed dealId, address indexed founder, address indexed project, uint128 ask, string name, string uri
     );
     event StageChanged(uint256 indexed dealId, Stage stage);
+    event Opined(uint256 indexed dealId, Role role, address indexed partner, bool inFavour, uint8 score, string uri);
     event Voted(
         uint256 indexed dealId, uint8 round, Role role, address indexed partner, bool inFavour, uint8 score, string uri
     );
@@ -367,6 +368,20 @@ contract Committee is ERC2771Context, ReentrancyGuardTransient {
         } else if (deal.against > SEATS - QUORUM) {
             _defeat(dealId, deal);
         }
+    }
+
+    /// @notice Puts a partner's first view of a pitch on record while it is under review. The
+    ///         record comes before the votes, so anyone can check that each partner formed
+    ///         its view without sight of how the others voted.
+    /// @dev Only an event: the view binds nobody, and the vote that follows is what counts.
+    function opine(uint256 dealId, bool inFavour, uint8 score, string calldata uri) external {
+        address partner = _msgSender();
+        Partner storage seat = _partners[partner];
+        if (!seat.seated) revert NotAPartner();
+        if (score > 100) revert InvalidScore();
+        _checkText(uri, MAX_URI_BYTES);
+        if (_deal(dealId).stage != Stage.Review) revert WrongStage();
+        emit Opined(dealId, seat.role, partner, inFavour, score, uri);
     }
 
     /// @notice Sets the terms of an approved deal and sets the money aside for it. Only the

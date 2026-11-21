@@ -92,6 +92,8 @@ export function EventText({ event }: { event: IndexedEvent }) {
   switch (event.name) {
     case "Pitched":
       return <>{t("pitched")}</>;
+    case "Opined":
+      return <>{t("opined", { role: tRoles(ROLES[Number(args.role)]!), leaning: args.inFavour === true ? t("leanInvest") : t("leanPass"), score: Number(args.score) })}</>;
     case "Voted":
       return <>{t("voted", { role: tRoles(ROLES[Number(args.role)]!), vote: args.inFavour === true ? t("for") : t("against"), score: Number(args.score) })}</>;
     case "StageChanged":
@@ -126,6 +128,8 @@ export function EventText({ event }: { event: IndexedEvent }) {
       );
     case "MotionOpened":
       return <>{t("motionOpened", { investor: shortAddress(String(args.proposer) as Address) })}</>;
+    case "MotionSupported":
+      return <>{t("motionSupported", { investor: shortAddress(String(args.investor) as Address) })}</>;
     default:
       return <>{event.name}</>;
   }
@@ -213,6 +217,12 @@ export function PartnerPanel({ role, round, meeting, ballot, size = "default" }:
             {t("score", { score: analysis.score ?? 0 })}
           </p>
           <p className={cn("leading-relaxed text-pretty", size === "screen" ? "text-lg" : "text-[15px]")}>{analysis.text}</p>
+          {analysis.transactionHash !== null && (
+            <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="opinion-on-chain">
+              {t("onChain", { seconds: ((analysis.confirmMs ?? 0) / 1000).toFixed(1) })}
+              <TransactionLink hash={analysis.transactionHash} />
+            </p>
+          )}
         </section>
       )}
       {speaking !== undefined && speaking.text !== "" && (

@@ -18,14 +18,16 @@ import {Token} from "../src/Token.sol";
 ///      script again deploys only what changed, and tops up only what is missing.
 ///
 ///      Reads OPERATOR_PRIVATE_KEY, the account that deploys and pays; PARTNER_KEYS, the four
-///      partners' keys in seat order, of which only the addresses are used; and INVESTOR, the
-///      address that receives the shares of the first deposit.
+///      partners' keys in seat order, of which only the addresses are used; INVESTOR, the
+///      address that receives the shares of the first deposit; and optionally FIRST_DEPOSIT,
+///      the size of that deposit in whole tokens.
 contract Deploy is Script {
     address private constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     bytes32 private constant SALT = keccak256("onchain-vc");
 
-    /// @dev What the operator puts into the fund on the first deployment.
-    uint256 private constant SEED = 100_000e18;
+    /// @dev What the operator puts into the fund on the first deployment, in whole tokens,
+    ///      unless FIRST_DEPOSIT names another amount.
+    uint256 private constant DEFAULT_FIRST_DEPOSIT = 100_000;
     uint16 private constant QUORUM_BPS = 5000;
     uint32 private constant MOTION_PERIOD = 3 days;
 
@@ -74,9 +76,10 @@ contract Deploy is Script {
         }
 
         if (fund.totalSupply() == 0) {
-            token.mint(operator, SEED);
-            token.approve(address(fund), SEED);
-            fund.deposit(SEED, investor);
+            uint256 first = vm.envOr("FIRST_DEPOSIT", DEFAULT_FIRST_DEPOSIT) * 1e18;
+            token.mint(operator, first);
+            token.approve(address(fund), first);
+            fund.deposit(first, investor);
         }
 
         uint256 minBond = committee.minBond();

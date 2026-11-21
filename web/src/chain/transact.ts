@@ -7,12 +7,14 @@ import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { BaseError, ContractFunctionRevertedError, InsufficientFundsError, TransactionNotFoundError, UserRejectedRequestError, withRetry } from "viem";
+import { estimateContractGas } from "viem/actions";
 import { useChainId, useConfig, useConnection } from "wagmi";
 import { getConnectorClient, getPublicClient, getTransaction, simulateContract, waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { addActivity, markSentHere } from "./activity";
 import { BatchRevertedError, sendBatch } from "./batch";
 import { networkOf } from "./config";
 import { connectionSettled } from "./connection";
+import { DEFAULT_GAS_MARGIN_PERCENT } from "./networks";
 import { RelayRefusedError } from "./relay";
 
 type Mutability = "nonpayable" | "payable";
@@ -130,11 +132,17 @@ export function useTransact() {
     options: TransactOptions = {},
   ): Promise<TransactionReceipt | undefined> => {
     return transact(async () => {
-      const { request } = await simulateContract(config, { ...call, account: address, chainId } as never);
+      const [{ request }, estimate] = await Promise.all([
+        simulateContract(config, { ...call, account: address, chainId } as never),
+        estimateContractGas(getPublicClient(config, { chainId })!, { ...call, account: address } as never),
+      ]);
+      // The limit is set here, with the chain's own margin, so no wallet pads it further.
+      // Some wallets fall back to a very high limit, which a chain that bills the limit charges in full.
+      const margin = BigInt(networkOf(chainId)?.gasMarginPercent ?? DEFAULT_GAS_MARGIN_PERCENT);
       // The connected wallet sends it. Naming the account again would make a wallet that
       // signs in the page, like the burner, hand the signing to the node instead.
       const { account: _account, ...unsigned } = request as { account?: unknown };
-      return writeContract(config, unsigned as never);
+      return writeContract(config, { ...unsigned, gas: estimate + estimate * margin / 100n } as never);
     }, options);
   }, [transact, config, address, chainId]);
 

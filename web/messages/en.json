@@ -6,6 +6,7 @@
   "nav": {
     "room": "Room",
     "pitch": "Pitch",
+    "join": "Join",
     "portfolio": "Portfolio",
     "partners": "Partners",
     "investors": "Investors",
@@ -159,6 +160,22 @@
       "expired": "Expired. What was set aside went back to the fund"
     },
     "scanToPitch": "Scan to pitch",
+    "scanToJoin": "Scan to invest",
+    "veto": {
+      "open": "Investors are voting on a veto",
+      "carried": "The veto has carried",
+      "supporters": "{count, plural, one {# investor} other {# investors}} in support",
+      "progress": "{percent}% of the shares needed",
+      "returned": "Returned to the fund",
+      "slashed": "Slashed from the {partner}'s bond"
+    },
+    "chain": {
+      "transactions": "Transactions",
+      "blocks": "Blocks",
+      "confirm": "Time to receipt",
+      "fees": "Fees in total",
+      "ms": "{ms} ms"
+    },
     "available": "Available",
     "paidOut": "Paid out",
     "pitches": "Pitches",
@@ -249,6 +266,10 @@
   },
   "events": {
     "pitched": "Pitched",
+    "opined": "{role} gave a first view: {leaning}, {score} points",
+    "leanInvest": "leaning to invest",
+    "leanPass": "leaning to pass",
+    "motionSupported": "Investor {investor} supported the veto",
     "voted": "{role} voted {vote}, {score} points",
     "for": "for",
     "against": "against",
@@ -331,6 +352,7 @@
     "noWeight": "You held no shares when the committee approved it.",
     "alreadySupported": "Supported",
     "notVetoable": "This deal can no longer be vetoed.",
+    "motionPending": "Someone has just proposed this veto. Try again to support it.",
     "support": "{percent}% of the shares needed",
     "weight": "Your shares at approval: {amount}",
     "vetoTitle": "Veto deal",
@@ -353,6 +375,18 @@
     "carried": "Carried",
     "lapsed": "Lapsed",
     "supportButton": "Support"
+  },
+  "join": {
+    "title": "Join the fund",
+    "description": "The organisers deposit the same amount of test dollars for everyone in the room and turn it into shares of the fund. With shares you can vote to veto the deals the committee approves.",
+    "button": "Join the fund",
+    "joining": "Joining",
+    "full": "The fund has taken in everyone it can for now.",
+    "failed": "Could not join. Try again later.",
+    "shares": "Your shares",
+    "share": "Of the fund",
+    "preparing": "Getting ready. You can vote in a few seconds.",
+    "watch": "Watch the meeting"
   },
   "landing": {
     "titleLead": "An on-chain fund",
@@ -378,6 +412,11 @@
     "backed": "Projects backed",
     "paidOut": "Paid out",
     "bonds": "Partner bonds",
+    "transactions": "Transactions",
+    "blocks": "Blocks",
+    "confirm": "Time to receipt",
+    "confirmUnit": "ms",
+    "fees": "Fees in total",
     "stepsTitle": "From pitch to payment",
     "steps": {
       "pitch": {

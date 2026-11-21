@@ -394,3 +394,72 @@ export function useNotes(dealId: number | undefined) {
     refetchInterval: 3000,
   });
 }
+
+export interface ChainStats {
+  transactions: number;
+  blocks: number;
+  busiestBlock: number;
+  /** In wei of the chain's native token. */
+  fees: bigint;
+  medianConfirmMs: number | null;
+}
+
+/** How much the app has put on the chain so far: transactions, the blocks they are in and their cost. */
+export function useStats() {
+  const chainId = useChainId();
+  return useQuery({
+    queryKey: ["stats", chainId],
+    queryFn: async (): Promise<ChainStats> => {
+      const response = await fetch(`/api/stats?chainId=${chainId}`);
+      if (!response.ok) {
+        throw new Error(`/api/stats failed with HTTP ${response.status}.`);
+      }
+      const stats = await response.json() as Omit<ChainStats, "fees"> & { fees: string };
+      return { ...stats, fees: BigInt(stats.fees) };
+    },
+    refetchInterval: 2000,
+  });
+}
+
+export interface VetoMotion {
+  id: bigint;
+  carried: boolean;
+  deadline: Date;
+  /** The weight behind the motion and the weight it needs, in shares. */
+  support: bigint;
+  quorum: bigint;
+  /** How far the support has come towards the quorum, from 0 to 100. */
+  percent: number;
+}
+
+/** The latest motion to veto a deal, if investors have moved one. */
+export function useVetoMotion(dealId: number): VetoMotion | undefined {
+  const fund = useDeployment("Fund");
+  const { data: id, refetch: refetchId } = useReadContract(fund === undefined ? undefined : { ...fund, functionName: "vetoMotionOf", args: [BigInt(dealId)] });
+  const known = id !== undefined && id > 0n;
+  const { data, refetch } = useReadContracts({
+    allowFailure: false,
+    contracts: fund === undefined || !known
+      ? []
+      : [
+          { ...fund, functionName: "motion", args: [id] },
+          { ...fund, functionName: "quorumOf", args: [id] },
+        ],
+  });
+  useOnBlock(() => {
+    void refetchId();
+    void refetch();
+  }, 1000);
+  if (!known || data === undefined || data.length === 0) {
+    return undefined;
+  }
+  const [motion, quorum] = data as [{ carried: boolean; deadline: number; support: bigint }, bigint];
+  return {
+    id,
+    carried: motion.carried,
+    deadline: new Date(motion.deadline * 1000),
+    support: motion.support,
+    quorum,
+    percent: quorum === 0n ? 0 : Math.min(100, Number(motion.support * 100n / quorum)),
+  };
+}

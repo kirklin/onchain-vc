@@ -6,6 +6,7 @@
   "nav": {
     "room": "会议室",
     "pitch": "路演",
+    "join": "加入基金",
     "portfolio": "投资组合",
     "partners": "合伙人",
     "investors": "出资人",
@@ -159,6 +160,22 @@
       "expired": "已过期，预留的资金已退回基金"
     },
     "scanToPitch": "扫码路演",
+    "scanToJoin": "扫码出资",
+    "veto": {
+      "open": "出资人正在投票否决",
+      "carried": "否决已生效",
+      "supporters": "{count}位出资人赞成",
+      "progress": "已获得所需份额的{percent}%",
+      "returned": "退回基金",
+      "slashed": "扣除{partner}的保证金"
+    },
+    "chain": {
+      "transactions": "链上交易",
+      "blocks": "所在区块",
+      "confirm": "回执用时",
+      "fees": "手续费合计",
+      "ms": "{ms}毫秒"
+    },
     "available": "可投资金",
     "paidOut": "已打出",
     "pitches": "收到路演",
@@ -249,6 +266,10 @@
   },
   "events": {
     "pitched": "提交路演",
+    "opined": "{role}给出初步意见：{leaning}，{score}分",
+    "leanInvest": "倾向投资",
+    "leanPass": "倾向不投",
+    "motionSupported": "出资人 {investor} 赞成否决",
     "voted": "{role}投了{vote}票，{score}分",
     "for": "赞成",
     "against": "反对",
@@ -331,6 +352,7 @@
     "noWeight": "投委会通过时你没有份额，无法参与。",
     "alreadySupported": "已赞成",
     "notVetoable": "这笔投资已无法否决。",
+    "motionPending": "已有人发起否决，请再试。",
     "support": "已获得所需份额的{percent}%",
     "weight": "你在通过时的份额：{amount}",
     "vetoTitle": "否决投资",
@@ -353,6 +375,18 @@
     "carried": "已生效",
     "lapsed": "已过期",
     "supportButton": "赞成"
+  },
+  "join": {
+    "title": "加入基金",
+    "description": "活动方为每位观众存入等额的测试美元，换成基金份额。持有份额后，你可以对投委会通过的投资投否决票。",
+    "button": "加入基金",
+    "joining": "正在加入",
+    "full": "名额已满，暂无法加入。",
+    "failed": "未能加入，请稍后再试。",
+    "shares": "你的份额",
+    "share": "占基金的比例",
+    "preparing": "正在准备，几秒后可以投票。",
+    "watch": "旁听会议"
   },
   "landing": {
     "titleLead": "四位 AI 合伙人",
@@ -378,6 +412,11 @@
     "backed": "已投资的项目",
     "paidOut": "已打出的资金",
     "bonds": "合伙人保证金",
+    "transactions": "链上交易",
+    "blocks": "所在区块",
+    "confirm": "回执用时",
+    "confirmUnit": "毫秒",
+    "fees": "手续费合计",
     "stepsTitle": "从路演到打款",
     "steps": {
       "pitch": {

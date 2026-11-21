@@ -112,6 +112,32 @@ test.describe("with the committee deciding", () => {
     await expect(page.getByText("Tranche 2 paid")).toBeVisible({ timeout: 15_000 });
   });
 
+  test("takes a visitor into the fund, whose veto shows on the big screen", async ({ page, context }) => {
+    const problems = collectProblems(page);
+    await page.goto("/join");
+    await page.getByRole("button", { name: "Join the fund" }).click();
+    const membership = page.getByTestId("membership");
+    await expect(membership).toContainText("1,000");
+
+    // The visitor held shares when the committee approved, so the veto counts them.
+    const { dealId } = await pitchDirectly(site(), "Crowd Pizza");
+    await approve(dealId);
+    await offer(dealId);
+    const row = page.locator(`[data-testid=veto][data-deal="${dealId}"]`);
+    await row.getByRole("button", { name: "Propose veto" }).click();
+    await expect(row.getByText(/^\d+% of the shares needed$/)).toBeVisible();
+
+    const screen = await context.newPage();
+    await screen.goto("/screen");
+    await expect(screen.getByTestId("table")).toHaveAttribute("data-deal", String(dealId));
+    const meter = screen.getByTestId("veto-meter");
+    await expect(meter).toHaveAttribute("data-carried", "false");
+    await expect(meter).toContainText("1 investor in support");
+    await expect(screen.getByRole("img", { name: "Scan to invest" })).toBeVisible();
+    await expect(screen.getByTestId("chain-numbers")).toContainText("Transactions");
+    expect(problems).toEqual([]);
+  });
+
   test("lets the investor veto an approved deal, which costs the approving partners part of their bonds", async ({ page }) => {
     const { dealId, founder } = await pitchDirectly(site(), "Vetoed Pizza");
     await approve(dealId);
@@ -182,11 +208,16 @@ test("puts the newest pitch at the table and the pitch code on the big screen", 
   await page.goto("/screen");
   await expect(page.getByRole("banner")).toHaveCount(0);
   const table = page.getByTestId("table");
-  // Other tests pitch at the same time, so the newest pitch need not be this test's own.
+  // Other tests pitch at the same time, so the newest pitch need not be this test's own, and
+  // the table turns to a deal investors have just moved to veto, which another test may have done.
   await expect.poll(async () => {
-    const shown = await table.evaluate(element => ({ deal: element.dataset.deal, name: element.querySelector("h2")?.textContent }));
+    const shown = await table.evaluate(element => ({
+      deal: element.dataset.deal,
+      name: element.querySelector("h2")?.textContent,
+      contested: element.querySelector("[data-testid=veto-meter]") !== null,
+    }));
     const newest = await dealCount();
-    return shown.deal === String(newest) && shown.name === (await dealOf(newest)).name;
+    return shown.contested || (shown.deal === String(newest) && shown.name === (await dealOf(newest)).name);
   }).toBe(true);
   await expect(table.locator("article")).toHaveCount(4);
 
@@ -214,9 +245,13 @@ test("lists every pitch in the portfolio, filtered by outcome", async ({ page })
   await expect(deals.locator("li").first()).toBeVisible();
   const all = await deals.locator("li").count();
 
+  // Other tests pitch at the same time, so the list is counted again after the filter.
   await page.getByRole("radio", { name: "In progress" }).click();
   const reviewing = await deals.locator("li").count();
-  expect(reviewing).toBeLessThanOrEqual(all);
+  await page.getByRole("radio", { name: "All" }).click();
+  expect(reviewing).toBeLessThanOrEqual(await deals.locator("li").count());
+  expect(all).toBeGreaterThan(0);
+  await page.getByRole("radio", { name: "In progress" }).click();
   await deals.locator("li").first().getByRole("link").click();
   await page.waitForURL(/\/deals\/\d+$/);
 });
@@ -312,7 +347,7 @@ test("switches language and theme and remembers both", async ({ page }) => {
 test("fits every page within the width of the screen", async ({ page }) => {
   const { dealId } = await pitchDirectly(site(), `A long project name ${test.info().project.name}`);
   const problems = collectProblems(page);
-  for (const path of ["/", "/room", "/pitch", "/portfolio", "/partners", "/investors", `/deals/${dealId}`]) {
+  for (const path of ["/", "/room", "/pitch", "/join", "/portfolio", "/partners", "/investors", `/deals/${dealId}`]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
