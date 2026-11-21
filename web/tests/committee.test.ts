@@ -179,6 +179,30 @@ describe("committee runner", () => {
     expect(runner.seats.map(seat => seat.role)).toEqual(["risk"]);
   });
 
+  it("posts the bonds again after a veto has cost the approving seats part of them", async () => {
+    const fund = await deployFundSystem(key, client.account.address);
+    const runner = new CommitteeRunner(context(fund), services(), fund.partnerKeys);
+    await runner.prepare();
+    const minBond = await client.readContract({ address: fund.committee, abi: committeeAbi, functionName: "minBond" });
+    const bonds = () => Promise.all(fund.partnerKeys.map(async partnerKey =>
+      (await client.readContract({ address: fund.committee, abi: committeeAbi, functionName: "getPartner", args: [privateKeyToAccount(partnerKey).address] })).bond));
+
+    const { dealId } = await pitch(fund, await deployContract("Faucet", key), "Vetoed");
+    for (const partnerKey of fund.partnerKeys.slice(0, 3)) {
+      const partner = testClient(partnerKey as Hex);
+      await partner.waitForTransactionReceipt({ hash: await partner.writeContract({ address: fund.committee, abi: committeeAbi, functionName: "vote", args: [dealId, true, 80, "bafkreidemo"] }) });
+    }
+    // The fund weighs the veto by the shares held at the approval, which it reads once a later block exists.
+    const approved = await client.getBlockNumber();
+    await expect.poll(() => client.getBlockNumber({ cacheTime: 0 })).toBeGreaterThan(approved);
+    await client.waitForTransactionReceipt({ hash: await client.writeContract({ address: fund.fund, abi: fundAbi, functionName: "proposeVeto", args: [dealId] }) });
+    expect(await bonds()).toEqual([minBond * 8n / 10n, minBond * 8n / 10n, minBond * 8n / 10n, minBond]);
+
+    await runner.tick();
+
+    expect(await bonds()).toEqual([minBond, minBond, minBond, minBond]);
+  });
+
   it("closes a deal whose review ran out and tells every page", async () => {
     // A two-second review, so the chain's clock need not be moved for the other test files.
     const fund = await deployFundSystem(key, client.account.address, { reviewPeriod: 2 });

@@ -94,6 +94,7 @@ export class CommitteeRunner {
     });
 
     await this.#fuel();
+    await this.#rebond();
     for (const seat of this.#seats) {
       const name = seat.profile.name;
       const hash = profileHash(seat.profile, this.#context.modelName);
@@ -130,6 +131,45 @@ export class CommitteeRunner {
     await operator.send({ to: faucet, data, value, gas: gas + gas / 5n });
   }
 
+  /**
+   * Posts what is missing from the bond of each seat this server holds, as whoever runs a
+   * partner must after a veto has cost it part of its bond: a seat below the minimum cannot
+   * vote. The operator pays from its own tokens, and mints them where it owns the asset.
+   */
+  async #rebond() {
+    const { client, committee, asset, gasMarginPercent } = this.#context;
+    const operator = this.#services.operator;
+    if (operator === undefined || this.#seats.length === 0) {
+      return;
+    }
+    const minBond = await client.readContract({ address: committee, abi: committeeAbi, functionName: "minBond" });
+    const partners = await Promise.all(this.#seats.map(seat => client.readContract({ address: committee, abi: committeeAbi, functionName: "getPartner", args: [seat.account] })));
+    const short = this.#seats.flatMap((seat, index) => partners[index]!.bond < minBond ? [{ account: seat.account, missing: minBond - partners[index]!.bond }] : []);
+    if (short.length === 0) {
+      return;
+    }
+    const total = short.reduce((sum, item) => sum + item.missing, 0n);
+    const send = async (to: Address, data: Hex) => {
+      const gas = await client.estimateGas({ account: operator.address, to, data });
+      await operator.send({ to, data, gas: gas + gas * BigInt(gasMarginPercent) / 100n });
+    };
+
+    const [held, owner] = await Promise.all([
+      client.readContract({ address: asset.address, abi: tokenAbi, functionName: "balanceOf", args: [operator.address] }),
+      client.readContract({ address: asset.address, abi: tokenAbi, functionName: "owner" }),
+    ]);
+    if (held < total) {
+      if (getAddress(owner) !== operator.address) {
+        throw new Error(`The operator holds ${held} of the ${total} ${asset.symbol} the partners' bonds are short of, and cannot mint more.`);
+      }
+      await send(asset.address, encodeFunctionData({ abi: tokenAbi, functionName: "mint", args: [operator.address, total - held] }));
+    }
+    await send(asset.address, encodeFunctionData({ abi: tokenAbi, functionName: "approve", args: [committee, total] }));
+    for (const item of short) {
+      await send(committee, encodeFunctionData({ abi: committeeAbi, functionName: "postBond", args: [item.account, item.missing] }));
+    }
+  }
+
   async tick() {
     const { client, committee, chainId, bus } = this.#context;
     const count = Number(await client.readContract({ address: committee, abi: committeeAbi, functionName: "dealCount" }));
@@ -144,6 +184,10 @@ export class CommitteeRunner {
       if (this.#stages.get(dealId) !== stage) {
         this.#stages.set(dealId, stage);
         bus.emit({ chainId, type: "stage", dealId, stage });
+        // A veto has just cost the approving seats part of their bonds.
+        if (stage === "vetoed") {
+          await this.#rebond();
+        }
       }
 
       // A running deal whose time ran out is closed, which returns what was set aside for it.
