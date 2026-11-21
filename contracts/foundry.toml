@@ -1,0 +1,44 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+cache_path = "cache"
+libs = [ "node_modules" ]
+allow_paths = [ "../node_modules" ]
+remappings = [
+  "forge-std/=node_modules/forge-std/src/",
+  "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/",
+]
+solc_version = "0.8.38"
+optimizer = true
+optimizer_runs = 200
+ignored_warnings_from = [ "node_modules" ]
+fs_permissions = [
+  { access = "read-write", path = "./deployments" },
+  { access = "read", path = "./canonical" },
+]
+
+# Runs tests and scripts under Monad's gas model, opcode pricing and size limits.
+# Select it with FOUNDRY_PROFILE=monad.
+[profile.monad]
+network = "monad"
+
+[invariant]
+runs = 64
+depth = 64
+
+[fmt]
+line_length = 120
+
+[lint]
+# The reentrancy and event heuristics flag code whose effects already precede its external
+# calls, including in the OpenZeppelin patterns used here. The environment-read one flags
+# tests for moving time, which they do on purpose.
+exclude_lints = [
+  "block-timestamp",
+  "environment-read-across-mutation",
+  "reentrancy-events",
+  "reentrancy-no-eth",
+  "missing-events-access-control",
+]
