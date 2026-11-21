@@ -353,5 +353,87 @@
     "carried": "已生效",
     "lapsed": "已过期",
     "supportButton": "赞成"
+  },
+  "landing": {
+    "titleLead": "四位 AI 合伙人",
+    "titleRest": "管理的链上基金",
+    "lead": "创始人扫码就能路演，四位合伙人当场审议并在链上投票，三票赞成即可获得投资。",
+    "seats": {
+      "product": "产品",
+      "technology": "技术",
+      "tokenomics": "代币经济",
+      "risk": "风控与财务"
+    },
+    "pitch": "开始路演",
+    "watch": "旁听会议",
+    "latest": "最新路演",
+    "inSession": "正在开会",
+    "dealName": "第{id}号路演",
+    "numbersLead": "基金和投委会的",
+    "numbersRest": "链上数据",
+    "numbersHint": "数据直接从合约读取，有新区块时自动更新。",
+    "block": "区块高度",
+    "available": "可投资金",
+    "pitches": "收到的路演",
+    "backed": "已投资的项目",
+    "paidOut": "已打出的资金",
+    "bonds": "合伙人保证金",
+    "stepsTitle": "从路演到打款",
+    "steps": {
+      "pitch": {
+        "title": "提交路演",
+        "body": "填写合约地址和项目介绍即可提交，手续费由链上投委会代付。"
+      },
+      "review": {
+        "title": "合伙人审议",
+        "body": "四位合伙人各自读合约、查资料，再用自己的账户投票。"
+      },
+      "terms": {
+        "title": "确定条款",
+        "body": "三票赞成后，风控与财务合伙人确定投资金额、首笔比例和里程碑期限。"
+      },
+      "accept": {
+        "title": "接受投资",
+        "body": "创始人接受条款后，收到首笔资金和投资组合徽章。"
+      },
+      "milestone": {
+        "title": "验收里程碑",
+        "body": "创始人提交里程碑报告，合伙人投票通过后打出第二笔。"
+      },
+      "veto": {
+        "title": "出资人否决",
+        "body": "第二笔打出前，出资人可以按份额否决，未打出的资金退回基金。"
+      }
+    },
+    "partnersLead": "四位合伙人",
+    "partnersRest": "各自用链上账户投票",
+    "partnersHint": "每位合伙人都交了保证金，提示词的哈希值登记在合约里，任何人都可以核对。",
+    "bond": "保证金",
+    "vacant": "席位空缺",
+    "allPartners": "查看全部",
+    "activityTitle": "最近的链上动态",
+    "filters": {
+      "all": "全部",
+      "founder": "创始人",
+      "vote": "投票",
+      "money": "资金",
+      "veto": "否决"
+    },
+    "activityEmpty": "暂无链上动态",
+    "rulesTitle": "保护出资人的规则",
+    "rulesHint": "这些规则写在合约里，部署后任何人都无法更改。",
+    "rules": {
+      "quorum": "四位合伙人中至少三位赞成，基金才会投资。",
+      "tranchesUnit": "笔",
+      "tranches": "资金分两笔打出，第二笔在里程碑验收通过后打出。",
+      "veto": "第二笔打出前，持有{percent}%份额的出资人同意即可否决。",
+      "slash": "投资被否决后，投赞成票的合伙人各被扣除{percent}%保证金。"
+    },
+    "closingTitle": "提交你的路演",
+    "closingHint": "填写合约地址和项目介绍，四位合伙人会当场审议。",
+    "product": "产品",
+    "public": "公开信息",
+    "contracts": "合约",
+    "notDeployed": "未部署"
   }
 }

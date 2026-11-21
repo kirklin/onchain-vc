@@ -1,5 +1,5 @@
-import { Room } from "~/features/room/room";
+import { Landing } from "~/features/landing/landing";
 
-export default function RoomPage() {
-  return <Room />;
+export default function LandingPage() {
+  return <Landing />;
 }

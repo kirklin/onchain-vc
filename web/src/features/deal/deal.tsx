@@ -3,12 +3,12 @@
 import type { FormEvent } from "react";
 import type { Address } from "viem";
 import type { MilestoneDocument, Note, PitchDocument } from "~/chain/committee";
-import type { Deal, IndexedEvent, Meeting } from "~/chain/deals";
+import type { Deal, Meeting } from "~/chain/deals";
 import { useFormatter, useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { useChainId, useConfig, useConnection, useReadContract } from "wagmi";
 import { writeContract } from "wagmi/actions";
-import { ROLES } from "~/chain/committee";
+import { DEAL_EVENTS, ROLES } from "~/chain/committee";
 import { networkOf } from "~/chain/config";
 import { useDeployment } from "~/chain/contracts";
 import { storeDocument, useBallots, useDeal, useDocument, useEvents, useMeetings, useNotes } from "~/chain/deals";
@@ -16,7 +16,7 @@ import { shortAddress } from "~/chain/format";
 import { useChainNow } from "~/chain/live";
 import { useRelay } from "~/chain/relay";
 import { findRevert, useTransact } from "~/chain/transact";
-import { Money, PartnerPanel, PhaseLine, StageBadge, TransactionLink, VoteDots } from "~/components/committee";
+import { EventText, Money, PartnerPanel, PhaseLine, StageBadge, TransactionLink, VoteDots } from "~/components/committee";
 import { Countdown } from "~/components/countdown";
 import { AccountAvatar, AccountName } from "~/components/identity";
 import { Field, FormError, NotDeployed, Section } from "~/components/page";
@@ -336,15 +336,13 @@ function MilestoneRound({ deal, round, notes, live }: { deal: Deal; round: numbe
   );
 }
 
-const SHOWN_EVENTS = ["Pitched", "Voted", "StageChanged", "Offered", "Paid", "MilestoneSubmitted", "Returned", "Slashed", "MotionOpened"];
-
 /** Every on-chain event of the deal, oldest first, with its transaction. */
 function Timeline({ deal }: { deal: Deal }) {
   const t = useTranslations("deal");
   const format = useFormatter();
   // Events are stamped with the chain's time, so that is what their age is measured against.
   const now = useChainNow();
-  const { data: events } = useEvents({ dealId: deal.id, names: SHOWN_EVENTS, limit: 200 });
+  const { data: events } = useEvents({ dealId: deal.id, names: DEAL_EVENTS, limit: 200 });
   if (events === undefined || events.length === 0) {
     return null;
   }
@@ -352,7 +350,7 @@ function Timeline({ deal }: { deal: Deal }) {
     <Section title={t("timeline")}>
       <ol className="flex flex-col divide-y">
         {[...events].reverse().map(event => (
-          <li key={`${event.transactionHash}:${event.name}:${event.blockNumber}:${String(event.args.role ?? "")}:${String(event.args.stage ?? "")}`} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 text-[15px]">
+          <li key={`${event.transactionHash}:${event.name}:${JSON.stringify(event.args)}`} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 text-[15px]">
             <span><EventText event={event} /></span>
             <span className="flex items-center gap-3 text-sm text-muted-foreground">
               {format.relativeTime(new Date(event.timestamp), now)}
@@ -363,51 +361,4 @@ function Timeline({ deal }: { deal: Deal }) {
       </ol>
     </Section>
   );
-}
-
-function EventText({ event }: { event: IndexedEvent }) {
-  const t = useTranslations("events");
-  const tRoles = useTranslations("roles");
-  const tStages = useTranslations("stages");
-  const args = event.args;
-  switch (event.name) {
-    case "Pitched":
-      return <>{t("pitched")}</>;
-    case "Voted":
-      return <>{t("voted", { role: tRoles(["product", "technology", "tokenomics", "risk"][Number(args.role)] as "product"), vote: args.inFavour === true ? t("for") : t("against"), score: Number(args.score) })}</>;
-    case "StageChanged":
-      return <>{t("stage", { stage: tStages(["review", "approved", "rejected", "offered", "funded", "milestone", "completed", "vetoed", "expired"][Number(args.stage)] as "review") })}</>;
-    case "Offered":
-      return <>{t("offered")}</>;
-    case "Paid":
-      return (
-        <>
-          {t("paid", { tranche: Number(args.tranche) })}
-          {" "}
-          <Money value={BigInt(String(args.amount))} />
-        </>
-      );
-    case "MilestoneSubmitted":
-      return <>{t("milestone", { round: Number(args.round) })}</>;
-    case "Returned":
-      return (
-        <>
-          {t("returned")}
-          {" "}
-          <Money value={BigInt(String(args.amount))} />
-        </>
-      );
-    case "Slashed":
-      return (
-        <>
-          {t("slashed", { partner: shortAddress(String(args.partner) as Address) })}
-          {" "}
-          <Money value={BigInt(String(args.amount))} />
-        </>
-      );
-    case "MotionOpened":
-      return <>{t("motionOpened", { investor: shortAddress(String(args.proposer) as Address) })}</>;
-    default:
-      return <>{event.name}</>;
-  }
 }

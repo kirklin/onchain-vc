@@ -1,24 +1,17 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
-import type { Hash } from "viem";
+import type { Address, Hash } from "viem";
 import type { Note, Phase, RoleKey, StageKey } from "~/chain/committee";
-import type { Ballot, LiveSpeech, Meeting } from "~/chain/deals";
+import type { Ballot, IndexedEvent, LiveSpeech, Meeting } from "~/chain/deals";
 import { cn } from "cn";
-import { CheckIcon, CoinsIcon, CpuIcon, ExternalLinkIcon, LightbulbIcon, ShieldCheckIcon, XIcon } from "lucide-react";
+import { CheckIcon, ExternalLinkIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useChainId } from "wagmi";
-import { ROLES } from "~/chain/committee";
+import { ROLES, STAGES } from "~/chain/committee";
 import { networkOf } from "~/chain/config";
 import { useFund } from "~/chain/deals";
 import { formatAmount, shortAddress } from "~/chain/format";
-
-const ROLE_ICONS: Record<RoleKey, LucideIcon> = {
-  product: LightbulbIcon,
-  technology: CpuIcon,
-  tokenomics: CoinsIcon,
-  risk: ShieldCheckIcon,
-};
+import { ROLE_ICONS } from "./role-icons";
 
 export function RoleIcon({ role, className }: { role: RoleKey; className?: string }) {
   const Icon = ROLE_ICONS[role];
@@ -88,6 +81,54 @@ export function VoteDots({ ballots, className }: { ballots: readonly Ballot[] | 
       })}
     </span>
   );
+}
+
+/** What an indexed event of a deal means, in a sentence. */
+export function EventText({ event }: { event: IndexedEvent }) {
+  const t = useTranslations("events");
+  const tRoles = useTranslations("roles");
+  const tStages = useTranslations("stages");
+  const args = event.args;
+  switch (event.name) {
+    case "Pitched":
+      return <>{t("pitched")}</>;
+    case "Voted":
+      return <>{t("voted", { role: tRoles(ROLES[Number(args.role)]!), vote: args.inFavour === true ? t("for") : t("against"), score: Number(args.score) })}</>;
+    case "StageChanged":
+      return <>{t("stage", { stage: tStages(STAGES[Number(args.stage)]!) })}</>;
+    case "Offered":
+      return <>{t("offered")}</>;
+    case "Paid":
+      return (
+        <>
+          {t("paid", { tranche: Number(args.tranche) })}
+          {" "}
+          <Money value={BigInt(String(args.amount))} />
+        </>
+      );
+    case "MilestoneSubmitted":
+      return <>{t("milestone", { round: Number(args.round) })}</>;
+    case "Returned":
+      return (
+        <>
+          {t("returned")}
+          {" "}
+          <Money value={BigInt(String(args.amount))} />
+        </>
+      );
+    case "Slashed":
+      return (
+        <>
+          {t("slashed", { partner: shortAddress(String(args.partner) as Address) })}
+          {" "}
+          <Money value={BigInt(String(args.amount))} />
+        </>
+      );
+    case "MotionOpened":
+      return <>{t("motionOpened", { investor: shortAddress(String(args.proposer) as Address) })}</>;
+    default:
+      return <>{event.name}</>;
+  }
 }
 
 /** A transaction, linked to the explorer on chains that have one. */

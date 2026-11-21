@@ -353,5 +353,87 @@
     "carried": "Carried",
     "lapsed": "Lapsed",
     "supportButton": "Support"
+  },
+  "landing": {
+    "titleLead": "An on-chain fund",
+    "titleRest": "run by four AI partners",
+    "lead": "Founders pitch by scanning a code. Four partners review the pitch on the spot and vote on chain, and three votes in favour fund it.",
+    "seats": {
+      "product": "Product",
+      "technology": "Technology",
+      "tokenomics": "Tokenomics",
+      "risk": "Risk & finance"
+    },
+    "pitch": "Start a pitch",
+    "watch": "Watch the meeting",
+    "latest": "Latest pitch",
+    "inSession": "In session",
+    "dealName": "Pitch #{id}",
+    "numbersLead": "The fund and its committee,",
+    "numbersRest": "live on chain",
+    "numbersHint": "Every figure is read from the contracts and updates with each new block.",
+    "block": "Block height",
+    "available": "Available to invest",
+    "pitches": "Pitches received",
+    "backed": "Projects backed",
+    "paidOut": "Paid out",
+    "bonds": "Partner bonds",
+    "stepsTitle": "From pitch to payment",
+    "steps": {
+      "pitch": {
+        "title": "Submit a pitch",
+        "body": "Give the contract address and describe the project. The gas is paid for you."
+      },
+      "review": {
+        "title": "Partners review",
+        "body": "Each partner reads the contract, does its research and votes from its own account."
+      },
+      "terms": {
+        "title": "Set the terms",
+        "body": "With three votes in favour, the risk and finance partner sets the amount, the first tranche and the milestone deadline."
+      },
+      "accept": {
+        "title": "Accept the offer",
+        "body": "Once the founder accepts, the first tranche and a portfolio badge arrive."
+      },
+      "milestone": {
+        "title": "Check the milestone",
+        "body": "The founder reports the milestone, and the second tranche is paid once the partners approve it."
+      },
+      "veto": {
+        "title": "Investors veto",
+        "body": "Before the second tranche, investors can veto by share, and the unpaid money returns to the fund."
+      }
+    },
+    "partnersLead": "Four partners,",
+    "partnersRest": "each voting from its own account",
+    "partnersHint": "Every partner has posted a bond, and the hash of its prompt is registered in the contract for anyone to check.",
+    "bond": "Bond",
+    "vacant": "Seat vacant",
+    "allPartners": "See all",
+    "activityTitle": "Latest on chain",
+    "filters": {
+      "all": "All",
+      "founder": "Founders",
+      "vote": "Votes",
+      "money": "Money",
+      "veto": "Vetoes"
+    },
+    "activityEmpty": "Nothing on chain yet",
+    "rulesTitle": "Rules that protect investors",
+    "rulesHint": "These rules are written into the contracts and cannot be changed by anyone once deployed.",
+    "rules": {
+      "quorum": "At least three of the four partners must vote in favour before the fund invests.",
+      "tranchesUnit": "tranches",
+      "tranches": "The money is paid in two tranches, the second only once the milestone is approved.",
+      "veto": "Before the second tranche, investors holding {percent}% of the shares can veto the deal.",
+      "slash": "When a deal is vetoed, each partner who voted for it loses {percent}% of its bond."
+    },
+    "closingTitle": "Pitch your project",
+    "closingHint": "Give the contract address and describe the project. The four partners review it on the spot.",
+    "product": "Product",
+    "public": "Public record",
+    "contracts": "Contracts",
+    "notDeployed": "Not deployed"
   }
 }

@@ -3,7 +3,7 @@ import type { Hex } from "viem";
 import { Buffer } from "node:buffer";
 import { expect, test } from "@playwright/test";
 import * as jsqr from "jsqr";
-import { accept, approve, bondOf, dealOf, deployProject, investorKey, offer, pitchDirectly, publishProfiles, restoreBonds, vote } from "./chain.ts";
+import { accept, approve, bondOf, dealCount, dealOf, deployProject, investorKey, offer, pitchDirectly, publishProfiles, restoreBonds, vote } from "./chain.ts";
 
 // jsqr is a CommonJS bundle. When it runs its `default` is the decoder, which its types put one level deeper.
 const readQr = jsqr.default as unknown as typeof jsqr.default.default;
@@ -177,13 +177,17 @@ test("deposits into the fund for shares and redeems them", async ({ page }) => {
 
 test("puts the newest pitch at the table and the pitch code on the big screen", async ({ page }) => {
   test.skip(test.info().project.name !== "desktop", "The big screen is for a projector.");
-  const { dealId } = await pitchDirectly(site(), "Screen Pizza");
+  await pitchDirectly(site(), "Screen Pizza");
 
   await page.goto("/screen");
   await expect(page.getByRole("banner")).toHaveCount(0);
   const table = page.getByTestId("table");
-  await expect(table).toHaveAttribute("data-deal", String(dealId));
-  await expect(table.getByRole("heading", { level: 2 })).toHaveText("Screen Pizza");
+  // Other tests pitch at the same time, so the newest pitch need not be this test's own.
+  await expect.poll(async () => {
+    const shown = await table.evaluate(element => ({ deal: element.dataset.deal, name: element.querySelector("h2")?.textContent }));
+    const newest = await dealCount();
+    return shown.deal === String(newest) && shown.name === (await dealOf(newest)).name;
+  }).toBe(true);
   await expect(table.locator("article")).toHaveCount(4);
 
   const code = page.getByRole("img", { name: "Scan to pitch" });
@@ -258,8 +262,37 @@ test("serves a visitor without a wallet a page that knows nothing of anyone else
   expect(problems).toEqual([]);
 });
 
-test("switches language and theme and remembers both", async ({ page }) => {
+test("introduces the committee with figures and activity read from the chain", async ({ page }) => {
+  const problems = collectProblems(page);
+  const { dealId } = await pitchDirectly(site(), `Landing ${test.info().project.name}`);
+
   await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("An on-chain fund run by four AI partners");
+  const pitches = page.locator("dl > div", { has: page.getByText("Pitches received", { exact: true }) }).locator("dd");
+  await expect.poll(async () => Number(await pitches.textContent())).toBeGreaterThanOrEqual(Number(dealId));
+
+  const partners = page.locator("article[data-role]");
+  await expect(partners).toHaveCount(4);
+  await expect(partners.filter({ hasText: /Bond\s*[\d,.]+ tUSD/ })).toHaveCount(4);
+
+  // Other tests pitch and vote at the same time, so the list is checked for what it holds rather than for this test's pitch.
+  await page.getByRole("button", { name: "Founders" }).click();
+  await expect(page.getByRole("button", { name: "Founders" })).toHaveAttribute("aria-pressed", "true");
+  const rows = page.getByTestId("activity").locator("li");
+  await expect(rows.first()).toContainText("Founders");
+  await expect(rows.filter({ hasNotText: "Founders" })).toHaveCount(0);
+  await rows.first().getByRole("link", { name: /^Pitch #\d+$/ }).click();
+  await page.waitForURL(/\/deals\/\d+$/);
+
+  await page.goto("/");
+  await page.getByRole("link", { name: "Watch the meeting" }).first().click();
+  await page.waitForURL(/\/room$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Room");
+  expect(problems).toEqual([]);
+});
+
+test("switches language and theme and remembers both", async ({ page }) => {
+  await page.goto("/room");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Room");
 
   await page.getByRole("button", { name: "Settings" }).click();
@@ -279,7 +312,7 @@ test("switches language and theme and remembers both", async ({ page }) => {
 test("fits every page within the width of the screen", async ({ page }) => {
   const { dealId } = await pitchDirectly(site(), `A long project name ${test.info().project.name}`);
   const problems = collectProblems(page);
-  for (const path of ["/", "/pitch", "/portfolio", "/partners", "/investors", `/deals/${dealId}`]) {
+  for (const path of ["/", "/room", "/pitch", "/portfolio", "/partners", "/investors", `/deals/${dealId}`]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -293,7 +326,7 @@ test("says so when a page or a pitch does not exist", async ({ page }) => {
   expect(response!.status()).toBe(404);
   await expect(page.getByText("Page not found")).toBeVisible();
   await page.getByRole("link", { name: "Go home" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Room");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("An on-chain fund run by four AI partners");
 
   // The root's loading screen is sent first, so a deal address that cannot exist answers with the page, not the status.
   await page.goto("/deals/zero");

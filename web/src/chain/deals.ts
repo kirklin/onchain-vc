@@ -179,6 +179,7 @@ export function useFund() {
           { ...token, functionName: "symbol" },
           { ...token, functionName: "decimals" },
           { ...fund, functionName: "quorumBps" },
+          { ...committee, functionName: "slashBps" },
         ]
       : [],
   });
@@ -186,8 +187,8 @@ export function useFund() {
   if (data === undefined || !ready) {
     return undefined;
   }
-  const [available, shares, committed, maxAsk, minBond, bonds, symbol, decimals, quorumBps] = data as [bigint, bigint, bigint, bigint, bigint, bigint, string, number, number];
-  return { available, shares, committed, maxAsk, minBond, bonds, symbol, decimals, quorumBps };
+  const [available, shares, committed, maxAsk, minBond, bonds, symbol, decimals, quorumBps, slashBps] = data as [bigint, bigint, bigint, bigint, bigint, bigint, string, number, number, number];
+  return { available, shares, committed, maxAsk, minBond, bonds, symbol, decimals, quorumBps, slashBps };
 }
 
 export interface IndexedEvent {

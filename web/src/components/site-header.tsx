@@ -5,22 +5,12 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isFullScreen } from "./full-screen";
+import { NAV_LINKS } from "./nav";
 import { NetworkSwitcher } from "./network-switcher";
 import { SettingsMenu } from "./settings-menu";
 import { WalletButton } from "./wallet-button";
 
-const LINKS = [
-  { href: "/", key: "room" },
-  { href: "/pitch", key: "pitch" },
-  { href: "/portfolio", key: "portfolio" },
-  { href: "/partners", key: "partners" },
-  { href: "/investors", key: "investors" },
-] as const;
-
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/") {
-    return pathname === "/";
-  }
   return pathname.startsWith(href) || (href === "/portfolio" && pathname.startsWith("/deals"));
 }
 
@@ -31,7 +21,7 @@ export function SiteHeader() {
     return null;
   }
 
-  const links = LINKS.map(link => (
+  const links = NAV_LINKS.map(link => (
     <NavLink key={link.href} href={link.href} active={isActive(pathname, link.href)}>
       {t(`nav.${link.key}`)}
     </NavLink>
@@ -57,7 +47,7 @@ export function SiteHeader() {
 }
 
 /** Four seats around a table, in the solid inverse colour. */
-function Logo() {
+export function Logo() {
   return (
     <svg aria-hidden viewBox="0 0 28 28" className="size-7">
       <rect width="28" height="28" rx="8" fill="var(--primary)" />

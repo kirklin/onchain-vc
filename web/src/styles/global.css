@@ -29,6 +29,16 @@
   }
 }
 
+/* The light that runs along the top of the landing page's steps. */
+@keyframes rail {
+  from {
+    left: -10rem;
+  }
+  to {
+    left: 100%;
+  }
+}
+
 /* The type scale. Large sizes are set tight, with matching negative tracking. */
 @utility text-display {
   font-size: clamp(2.75rem, 7vw, 5rem);
