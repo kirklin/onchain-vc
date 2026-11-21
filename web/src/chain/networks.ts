@@ -35,6 +35,18 @@ export interface Network {
    * gas with them. Monad's consensus checks balances against the state of three blocks ago.
    */
   spendDelayBlocks?: number;
+  /**
+   * The balance below which the chain reverts an account's transfers of native tokens,
+   * unless the account has sent nothing else for `spendDelayBlocks`. Monad's reserve balance.
+   */
+  reserveBalance?: bigint;
+}
+
+/** The reserve rule the server's own accounts follow on a network, where the chain has one. */
+export function reserveRuleOf(network: Network): { balance: bigint; blocks: number } | undefined {
+  return network.reserveBalance === undefined || network.spendDelayBlocks === undefined
+    ? undefined
+    : { balance: network.reserveBalance, blocks: network.spendDelayBlocks };
 }
 
 export interface JoinLimits {
@@ -103,6 +115,8 @@ const local = defineChain({
 // price. A generous cap keeps transactions valid while the base fee climbs.
 const monadFees = { baseFeeMultiplier: 2 };
 const MONAD_VERIFIER = "https://sourcify-api-monad.blockvision.org/";
+// Consensus runs three blocks ahead of execution, and holds every account to a 10 MON reserve.
+const monadReserve = { spendDelayBlocks: 3, reserveBalance: parseEther("10") };
 
 /**
  * Every chain the project knows how to talk to. NEXT_PUBLIC_NETWORKS picks which of them
@@ -138,7 +152,7 @@ export const networks = {
     faucet: faucet("0.1", "0.03", "0.5", "30"),
     relay: relay(30, "20"),
     join: join("1000", 300),
-    spendDelayBlocks: 3,
+    ...monadReserve,
   },
   mainnet: { chain: mainnet, batchIntervalMs: 0, confirmations: 5 },
   base: { chain: base, batchIntervalMs: 0, confirmations: 3 },
@@ -150,6 +164,7 @@ export const networks = {
     // The public Monad endpoints refuse a log search wider than this.
     logRange: 100n,
     verifierUrl: MONAD_VERIFIER,
+    ...monadReserve,
   },
 } as const satisfies Record<string, Network>;
 

@@ -112,6 +112,21 @@ describe.runIf(enabled)("a meeting with real partners", () => {
     // The technology partner read the contract before speaking.
     expect(analyses.find(note => note.role === "technology")!.tools.some(use => use.tool === "read_contract")).toBe(true);
 
+    // Every first view went on chain, and all four were there before the first vote.
+    const opined = await client.getContractEvents({ address: system.committee, abi: committeeAbi, eventName: "Opined", args: { dealId: BigInt(dealId) }, fromBlock: 0n });
+    const voted = await client.getContractEvents({ address: system.committee, abi: committeeAbi, eventName: "Voted", args: { dealId: BigInt(dealId) }, fromBlock: 0n });
+    expect(opined).toHaveLength(4);
+    expect(voted).toHaveLength(4);
+    const lastView = opined.reduce((latest, log) => (log.blockNumber > latest ? log.blockNumber : latest), 0n);
+    expect(voted.every(log => log.blockNumber >= lastView)).toBe(true);
+    for (const analysis of analyses) {
+      expect(analysis.transactionHash).not.toBeNull();
+      expect(analysis.cid).not.toBeNull();
+      const log = opined.find(item => item.args.role === ["product", "technology", "tokenomics", "risk"].indexOf(analysis.role))!;
+      expect(log.args.inFavour).toBe(analysis.inFavour);
+      expect(log.args.uri).toBe(analysis.cid);
+    }
+
     const ballots = await client.readContract({ address: system.committee, abi: committeeAbi, functionName: "getBallots", args: [BigInt(dealId), 0n] });
     expect(ballots.every(ballot => ballot.cast)).toBe(true);
     for (const vote of votes) {

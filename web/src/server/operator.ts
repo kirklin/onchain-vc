@@ -1,5 +1,6 @@
 import type { Address, Chain, Hex, TransactionReceipt } from "viem";
 import type { RpcGateway } from "./rpc-gateway";
+import { setTimeout as sleep } from "node:timers/promises";
 import { createWalletClient, custom, publicActions } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -19,6 +20,17 @@ export function gatewayTransport(gateway: RpcGateway) {
   );
 }
 
+/**
+ * A chain's rule that an account's balance stays above a reserve. On Monad a transfer that
+ * would take the sender below 10 MON reverts, unless the sender has sent nothing else in the
+ * blocks consensus has not yet seen executed.
+ */
+export interface ReserveRule {
+  balance: bigint;
+  /** How many blocks must have passed since the account's previous transaction. */
+  blocks: number;
+}
+
 export interface OperatorCall {
   to: Address;
   data: Hex;
@@ -34,15 +46,19 @@ export interface OperatorCall {
  */
 export class Operator {
   readonly client;
+  readonly #reserve: ReserveRule | undefined;
   #tail: Promise<unknown> = Promise.resolve();
   #nextNonce = 0;
+  /** The block of this account's latest transaction. */
+  #lastBlock: bigint | undefined;
 
-  constructor(options: { key: Hex; chain: Chain; gateway: RpcGateway }) {
+  constructor(options: { key: Hex; chain: Chain; gateway: RpcGateway; reserve?: ReserveRule }) {
     this.client = createWalletClient({
       account: privateKeyToAccount(options.key),
       chain: options.chain,
       transport: gatewayTransport(options.gateway),
     }).extend(publicActions);
+    this.#reserve = options.reserve;
   }
 
   get address(): Address {
@@ -59,13 +75,35 @@ export class Operator {
     // Upstream nodes can trail each other by a block, so never go below what was already used.
     const onChain = await this.client.getTransactionCount({ address: this.address, blockTag: "latest" });
     const nonce = Math.max(onChain, this.#nextNonce);
+    await this.#clearReserve(call.value ?? 0n);
 
     const receipt = await this.client.sendTransactionSync({ ...call, nonce });
     // A reverted transaction is still included and still uses up its nonce.
     this.#nextNonce = nonce + 1;
+    this.#lastBlock = receipt.blockNumber;
     if (receipt.status !== "success") {
       throw new Error(`Transaction ${receipt.transactionHash} to ${call.to} reverted.`);
     }
     return receipt;
+  }
+
+  /**
+   * Holds back a transfer of native tokens that would take the balance below the chain's
+   * reserve until the account's previous transaction is old enough for the chain to let it
+   * through. Sent sooner, the transfer would be included and reverted.
+   */
+  async #clearReserve(value: bigint) {
+    const reserve = this.#reserve;
+    if (reserve === undefined || value === 0n || this.#lastBlock === undefined) {
+      return;
+    }
+    const balance = await this.client.getBalance({ address: this.address });
+    if (balance - value >= reserve.balance) {
+      return;
+    }
+    const clear = this.#lastBlock + BigInt(reserve.blocks);
+    while (await this.client.getBlockNumber({ cacheTime: 0 }) < clear) {
+      await sleep(this.client.chain.blockTime ?? 1000);
+    }
   }
 }

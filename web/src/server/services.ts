@@ -3,7 +3,7 @@ import type { ContractName } from "~/chain/contracts";
 import type { Network, NetworkName } from "~/chain/networks";
 import { createPublicClient, toFunctionSelector } from "viem";
 import { addressOn, contracts, relayed } from "~/chain/contracts";
-import { DEFAULT_GAS_MARGIN_PERCENT, networks } from "~/chain/networks";
+import { DEFAULT_GAS_MARGIN_PERCENT, networks, reserveRuleOf } from "~/chain/networks";
 import { serverEnv } from "./env";
 import { FaucetService } from "./faucet";
 import { JoinService } from "./join";
@@ -43,7 +43,7 @@ function create(name: NetworkName): ChainServices {
   const client = createPublicClient({ chain, transport: gatewayTransport(gateway) });
 
   const key = env.operatorKey(name);
-  const operator = key === undefined ? undefined : new Operator({ key, chain, gateway });
+  const operator = key === undefined ? undefined : new Operator({ key, chain, gateway, reserve: reserveRuleOf(network) });
 
   const contract = addressOn("Faucet", chain.id);
   const faucet = network.faucet === undefined || operator === undefined || contract === undefined
