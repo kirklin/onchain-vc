@@ -20,4 +20,18 @@ if (existing !== undefined && existing !== "") {
   console.log(`Operator address: ${privateKeyToAccount(key).address}`);
 }
 
-console.log("The operator deploys the contracts and pays for the relayer and the faucet. Fund it before deploying to a live network.");
+const partners = process.env.PARTNER_KEYS;
+if (partners !== undefined && partners !== "") {
+  const keys = partners.split(",").map(key => key.trim());
+  if (keys.length !== 4 || !keys.every(key => isHex(key))) {
+    throw new Error("PARTNER_KEYS in .env must be four hex strings separated by commas.");
+  }
+  console.log(`Partner addresses: ${keys.map(key => privateKeyToAccount(key as `0x${string}`).address).join(", ")}`);
+} else {
+  const keys = Array.from({ length: 4 }, () => generatePrivateKey());
+  appendFileSync(envFile, `PARTNER_KEYS=${keys.join(",")}\n`);
+  console.log(`Wrote four new PARTNER_KEYS to ${envFile}`);
+  console.log(`Partner addresses: ${keys.map(key => privateKeyToAccount(key).address).join(", ")}`);
+}
+
+console.log("The operator deploys the contracts, pays for the relayer and the faucet, and tops up the partners' gas. Fund it before deploying to a live network.");

@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 import { createPublicClient, http } from "viem";
 import { networks } from "../../web/src/chain/networks.ts";
-import { contractsDir, deploymentFile, operatorKey, rootDir, rpcUrl } from "./env.ts";
+import { contractsDir, deploymentFile, investor, operatorKey, partnerKeys, rootDir, rpcUrl } from "./env.ts";
 
 /** Broadcasts script/Deploy.s.sol, then regenerates the typed ABIs and addresses for the web app. */
 export function deploy(name: NetworkName) {
@@ -21,7 +21,12 @@ export function deploy(name: NetworkName) {
   execFileSync("forge", args, {
     cwd: contractsDir,
     stdio: "inherit",
-    env: { ...process.env, OPERATOR_PRIVATE_KEY: operatorKey(name) },
+    env: {
+      ...process.env,
+      OPERATOR_PRIVATE_KEY: operatorKey(name),
+      PARTNER_KEYS: partnerKeys(name).join(","),
+      INVESTOR: investor(name),
+    },
   });
   execFileSync("pnpm", ["--filter", "@onchain-vc/web", "generate"], { cwd: rootDir, stdio: "inherit" });
 }

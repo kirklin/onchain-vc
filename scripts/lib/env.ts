@@ -1,10 +1,11 @@
-import type { Hex } from "viem";
+import type { Address, Hex } from "viem";
 import type { NetworkName } from "../../web/src/chain/networks.ts";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { isHex } from "viem";
-import { isNetworkName, LOCAL_OPERATOR_KEY, networks, parseNetworkNames, rpcUrlsVariable } from "../../web/src/chain/networks.ts";
+import { isAddress, isHex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { isNetworkName, LOCAL_INVESTOR_KEY, LOCAL_OPERATOR_KEY, LOCAL_PARTNER_KEYS, networks, parseNetworkNames, rpcUrlsVariable } from "../../web/src/chain/networks.ts";
 
 export const rootDir = path.join(import.meta.dirname, "..", "..");
 export const contractsDir = path.join(rootDir, "contracts");
@@ -51,6 +52,37 @@ export function operatorKey(name: NetworkName): Hex {
     throw new Error("OPERATOR_PRIVATE_KEY must be a 32-byte hex string starting with 0x.");
   }
   return key;
+}
+
+/** The four partners' keys in seat order: product, technology, tokenomics, risk. */
+export function partnerKeys(name: NetworkName): Hex[] {
+  const value = process.env.PARTNER_KEYS;
+  if (value === undefined || value === "") {
+    if (name === "local") {
+      return [...LOCAL_PARTNER_KEYS];
+    }
+    throw new Error("PARTNER_KEYS is not set. Run `pnpm keygen`.");
+  }
+  const keys = value.split(",").map(key => key.trim());
+  if (keys.length !== 4 || !keys.every(isKey)) {
+    throw new Error("PARTNER_KEYS must be four 32-byte hex strings starting with 0x, separated by commas.");
+  }
+  return keys;
+}
+
+/** Who receives the shares of the fund's first deposit, and with them the say over vetoes. */
+export function investor(name: NetworkName): Address {
+  const value = process.env.INVESTOR;
+  if (value === undefined || value === "") {
+    if (name === "local") {
+      return privateKeyToAccount(LOCAL_INVESTOR_KEY).address;
+    }
+    throw new Error("INVESTOR is not set. Set it to the address of the wallet that will speak for the fund's investors.");
+  }
+  if (!isAddress(value)) {
+    throw new Error("INVESTOR must be an address.");
+  }
+  return value;
 }
 
 export function deploymentFile(chainId: number) {

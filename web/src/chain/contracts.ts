@@ -11,6 +11,9 @@ export const MULTICALL3_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11" s
  * After adding a contract to contracts/src and to script/Deploy.s.sol, list it here.
  */
 export const contracts = {
+  Committee: { abi: generated.committeeAbi, addresses: generated.committeeAddress },
+  Fund: { abi: generated.fundAbi, addresses: generated.fundAddress },
+  PortfolioBadge: { abi: generated.portfolioBadgeAbi, addresses: generated.portfolioBadgeAddress },
   Token: { abi: generated.tokenAbi, addresses: generated.tokenAddress },
   Forwarder: { abi: generated.forwarderAbi, addresses: generated.forwarderAddress },
   BatchExecutor: { abi: generated.batchExecutorAbi, addresses: generated.batchExecutorAddress },
@@ -23,8 +26,11 @@ export type ContractName = keyof typeof contracts;
  * Functions whose gas the server pays when a user signs the call instead of sending it.
  * Only list contracts that trust the Forwarder (ERC-2771), and only functions that are
  * cheap and safe to offer for free: the relayer's budget is spent on whatever is listed.
+ * Founders pitch, accept terms and report milestones without holding any native tokens.
  */
-export const relayed: Partial<Record<ContractName, readonly string[]>> = {};
+export const relayed: Partial<Record<ContractName, readonly string[]>> = {
+  Committee: ["pitch", "accept", "submitMilestone"],
+};
 
 export function addressOn(name: ContractName, chainId: number): Address | undefined {
   return (contracts[name].addresses as Partial<Record<number, Address>>)[chainId];

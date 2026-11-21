@@ -2,8 +2,11 @@
   "block": 0,
   "contracts": {
     "BatchExecutor": "0x12261779830Bfd8F39903670cc31cA166416BdE8",
+    "Committee": "0x5538111dF114A80475a6b120aC73cD8d533EFBD4",
     "Faucet": "0x122AA77CF167E47FD42968a13E8e306fC13136eb",
     "Forwarder": "0x9306aEddA526C4506e2546b05fB80F43Bc977A39",
+    "Fund": "0x01153646d972a5573b7daF338a6AbE4323227249",
+    "PortfolioBadge": "0x76fc83651F072bFE1a2211ea1412D7B126ac1Bf6",
     "Token": "0x5a7cb8387b677eFBE14677e2f07cA5FEA99ce4e4"
   }
 }
