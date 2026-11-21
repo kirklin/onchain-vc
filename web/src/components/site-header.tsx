@@ -1,13 +1,41 @@
 "use client";
 
+import { cn } from "cn";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { isFullScreen } from "./full-screen";
 import { NetworkSwitcher } from "./network-switcher";
 import { SettingsMenu } from "./settings-menu";
 import { WalletButton } from "./wallet-button";
 
+const LINKS = [
+  { href: "/", key: "room" },
+  { href: "/pitch", key: "pitch" },
+  { href: "/portfolio", key: "portfolio" },
+  { href: "/partners", key: "partners" },
+  { href: "/investors", key: "investors" },
+] as const;
+
+function isActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  return pathname.startsWith(href) || (href === "/portfolio" && pathname.startsWith("/deals"));
+}
+
 export function SiteHeader() {
   const t = useTranslations();
+  const pathname = usePathname();
+  if (isFullScreen(pathname)) {
+    return null;
+  }
+
+  const links = LINKS.map(link => (
+    <NavLink key={link.href} href={link.href} active={isActive(pathname, link.href)}>
+      {t(`nav.${link.key}`)}
+    </NavLink>
+  ));
 
   return (
     <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl">
@@ -16,12 +44,14 @@ export function SiteHeader() {
           <Logo />
           {t("app.name")}
         </Link>
+        <nav className="hidden items-center gap-1 lg:flex">{links}</nav>
         <div className="ml-auto flex items-center gap-2">
           <NetworkSwitcher />
           <WalletButton />
           <SettingsMenu />
         </div>
       </div>
+      <nav className="flex items-center gap-1 overflow-x-auto px-4 pb-3 lg:hidden">{links}</nav>
     </header>
   );
 }
@@ -37,5 +67,20 @@ function Logo() {
       <circle cx="6.5" cy="14" r="1.75" fill="var(--primary-foreground)" />
       <circle cx="21.5" cy="14" r="1.75" fill="var(--primary-foreground)" />
     </svg>
+  );
+}
+
+function NavLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "rounded-full px-3.5 py-2 text-[15px] font-semibold whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground",
+        active && "bg-fill text-foreground",
+      )}
+    >
+      {children}
+    </Link>
   );
 }

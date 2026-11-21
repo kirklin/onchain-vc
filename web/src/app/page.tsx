@@ -1,7 +1,5 @@
-import { getTranslations } from "next-intl/server";
-import { PageHeader } from "~/components/page";
+import { Room } from "~/features/room/room";
 
-export default async function HomePage() {
-  const t = await getTranslations("app");
-  return <PageHeader title={t("name")} description={t("tagline")} />;
+export default function RoomPage() {
+  return <Room />;
 }

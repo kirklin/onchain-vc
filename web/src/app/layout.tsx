@@ -7,6 +7,7 @@ import { cookieToInitialState } from "wagmi";
 import { createWagmiConfig } from "~/chain/config";
 import { ChainProviders } from "~/chain/providers";
 import { SiteHeader } from "~/components/site-header";
+import { SiteMain } from "~/components/site-main";
 import { ThemeProvider } from "~/components/theme-provider";
 import { Toaster } from "~/components/ui/sonner";
 import { appUrl } from "~/server/env";
@@ -37,7 +38,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <NextIntlClientProvider>
             <ChainProviders initialState={initialState}>
               <SiteHeader />
-              <main className="mx-auto w-full max-w-6xl px-5 pt-6 pb-28 sm:px-8">{children}</main>
+              <SiteMain>{children}</SiteMain>
               <Toaster position="bottom-right" />
             </ChainProviders>
           </NextIntlClientProvider>
