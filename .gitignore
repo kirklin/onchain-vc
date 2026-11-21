@@ -1,0 +1,59 @@
+######################
+# Project Specific
+######################
+node_modules/
+dist
+.next
+.vercel
+*.local
+*.tsbuildinfo
+next-env.d.ts
+test-results/
+playwright-report/
+.data/
+
+######################
+# Foundry
+######################
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
+######################
+# Secrets
+######################
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+keystore.properties
+*.p12
+*.pem
+*.cer
+
+######################
+# Logs
+######################
+*.log
+npm-debug.log.*
+pnpm-debug.log*
+
+######################
+# Local drafts
+######################
+BRIEF.md
+NOTES.md
+TODO.md
+*.draft.md
+notes/
+
+######################
+# Editors and OS
+######################
+.idea/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
+.claude/

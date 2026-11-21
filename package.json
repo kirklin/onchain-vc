@@ -1,0 +1,43 @@
+{
+  "name": "onchain-vc",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "description": "An on-chain micro fund whose investment committee is four AI partners, each with its own account and bond",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.ts",
+    "preview": "node scripts/preview.ts",
+    "chain": "node scripts/chain.ts",
+    "deploy:contracts": "node scripts/deploy.ts",
+    "keygen": "node scripts/keygen.ts",
+    "build": "pnpm --filter @onchain-vc/web build",
+    "start": "pnpm --filter @onchain-vc/web start",
+    "test": "pnpm test:contracts && pnpm test:web",
+    "test:contracts": "pnpm --filter @onchain-vc/contracts test",
+    "test:web": "pnpm --filter @onchain-vc/web test --run",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "typecheck": "tsc --noEmit && pnpm --filter @onchain-vc/web typecheck",
+    "typecheck:ts6": "tsc6 --noEmit && pnpm --filter @onchain-vc/web typecheck:ts6"
+  },
+  "devDependencies": {
+    "@eslint-react/eslint-plugin": "^5.30.2",
+    "@kirklin/eslint-config": "^8.5.0",
+    "@next/eslint-plugin-next": "^16.4.6",
+    "@types/node": "^26.6.6",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "eslint": "^10.14.0",
+    "eslint-plugin-erasable-syntax-only": "^0.7.2",
+    "eslint-plugin-format": "^2.0.1",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "jiti": "^2.7.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "viem": "^2.57.19"
+  }
+}
