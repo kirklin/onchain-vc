@@ -3,7 +3,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x12261779830Bfd8F39903670cc31cA166416BdE8)
+ * -
  */
 export const batchExecutorAbi = [
   { type: 'receive', stateMutability: 'payable' },
@@ -89,14 +90,17 @@ export const batchExecutorAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x12261779830Bfd8F39903670cc31cA166416BdE8)
+ * -
  */
 export const batchExecutorAddress = {
+  10143: '0x12261779830Bfd8F39903670cc31cA166416BdE8',
   31337: '0x12261779830Bfd8F39903670cc31cA166416BdE8',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x12261779830Bfd8F39903670cc31cA166416BdE8)
+ * -
  */
 export const batchExecutorConfig = {
   address: batchExecutorAddress,
@@ -108,7 +112,8 @@ export const batchExecutorConfig = {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xC03Cc3d07F52A81425B9829321207b536aa65f88)
+ * -
  */
 export const committeeAbi = [
   {
@@ -899,14 +904,17 @@ export const committeeAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xC03Cc3d07F52A81425B9829321207b536aa65f88)
+ * -
  */
 export const committeeAddress = {
+  10143: '0xC03Cc3d07F52A81425B9829321207b536aa65f88',
   31337: '0x1474a535eE7d3FAfAbaf6B757F948bD1ee0D1a05',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xC03Cc3d07F52A81425B9829321207b536aa65f88)
+ * -
  */
 export const committeeConfig = {
   address: committeeAddress,
@@ -918,7 +926,8 @@ export const committeeConfig = {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x122AA77CF167E47FD42968a13E8e306fC13136eb)
+ * -
  */
 export const faucetAbi = [
   {
@@ -956,14 +965,17 @@ export const faucetAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x122AA77CF167E47FD42968a13E8e306fC13136eb)
+ * -
  */
 export const faucetAddress = {
+  10143: '0x122AA77CF167E47FD42968a13E8e306fC13136eb',
   31337: '0x122AA77CF167E47FD42968a13E8e306fC13136eb',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x122AA77CF167E47FD42968a13E8e306fC13136eb)
+ * -
  */
 export const faucetConfig = { address: faucetAddress, abi: faucetAbi } as const
 
@@ -972,7 +984,8 @@ export const faucetConfig = { address: faucetAddress, abi: faucetAbi } as const
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x9306aEddA526C4506e2546b05fB80F43Bc977A39)
+ * -
  */
 export const forwarderAbi = [
   { type: 'constructor', inputs: [], stateMutability: 'nonpayable' },
@@ -1145,14 +1158,17 @@ export const forwarderAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x9306aEddA526C4506e2546b05fB80F43Bc977A39)
+ * -
  */
 export const forwarderAddress = {
+  10143: '0x9306aEddA526C4506e2546b05fB80F43Bc977A39',
   31337: '0x9306aEddA526C4506e2546b05fB80F43Bc977A39',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x9306aEddA526C4506e2546b05fB80F43Bc977A39)
+ * -
  */
 export const forwarderConfig = {
   address: forwarderAddress,
@@ -1164,7 +1180,8 @@ export const forwarderConfig = {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xB56F69Bc7e17Dbc932E535426E3C0Fdac3ec4803)
+ * -
  */
 export const fundAbi = [
   {
@@ -2066,14 +2083,17 @@ export const fundAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xB56F69Bc7e17Dbc932E535426E3C0Fdac3ec4803)
+ * -
  */
 export const fundAddress = {
+  10143: '0xB56F69Bc7e17Dbc932E535426E3C0Fdac3ec4803',
   31337: '0xCA4ec652901DEB7Fe1b849aEE91135BBD4296e80',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xB56F69Bc7e17Dbc932E535426E3C0Fdac3ec4803)
+ * -
  */
 export const fundConfig = { address: fundAddress, abi: fundAbi } as const
 
@@ -2133,7 +2153,8 @@ export const iPermit2Abi = [
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x7846d1d574EE933632eb2D702c215460b70B623b)
+ * -
  */
 export const portfolioBadgeAbi = [
   {
@@ -2419,14 +2440,17 @@ export const portfolioBadgeAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x7846d1d574EE933632eb2D702c215460b70B623b)
+ * -
  */
 export const portfolioBadgeAddress = {
+  10143: '0x7846d1d574EE933632eb2D702c215460b70B623b',
   31337: '0x270E33Ce99eF74E62115674bC2B8D93839f99b87',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x7846d1d574EE933632eb2D702c215460b70B623b)
+ * -
  */
 export const portfolioBadgeConfig = {
   address: portfolioBadgeAddress,
@@ -2438,7 +2462,8 @@ export const portfolioBadgeConfig = {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xc8652C929299A0D8d086787c9B270c1cC643E723)
+ * -
  */
 export const receptionAbi = [
   {
@@ -2516,14 +2541,17 @@ export const receptionAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xc8652C929299A0D8d086787c9B270c1cC643E723)
+ * -
  */
 export const receptionAddress = {
+  10143: '0xc8652C929299A0D8d086787c9B270c1cC643E723',
   31337: '0x50a76cEdc474Fc48b6F462F113e06598F2F7276D',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0xc8652C929299A0D8d086787c9B270c1cC643E723)
+ * -
  */
 export const receptionConfig = {
   address: receptionAddress,
@@ -2535,7 +2563,8 @@ export const receptionConfig = {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x54ff0eF6d135DBC0f21de1A71DcBB8256a6E8944)
+ * -
  */
 export const tokenAbi = [
   {
@@ -2899,14 +2928,17 @@ export const tokenAbi = [
 ] as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x54ff0eF6d135DBC0f21de1A71DcBB8256a6E8944)
+ * -
  */
 export const tokenAddress = {
+  10143: '0x54ff0eF6d135DBC0f21de1A71DcBB8256a6E8944',
   31337: '0x5a7cb8387b677eFBE14677e2f07cA5FEA99ce4e4',
 } as const
 
 /**
- *
+ * - [__View Contract on Monad Testnet Monad Testnet Explorer__](https://testnet.monadexplorer.com/address/0x54ff0eF6d135DBC0f21de1A71DcBB8256a6E8944)
+ * -
  */
 export const tokenConfig = { address: tokenAddress, abi: tokenAbi } as const
 
@@ -3356,5 +3388,6 @@ export const vaultAbi = [
 
 /** The block the contracts were first deployed at, per chain. */
 export const deploymentBlock = {
+  '10143': 81513572,
   '31337': 0,
 } as const
