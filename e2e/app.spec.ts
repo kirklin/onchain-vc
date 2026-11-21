@@ -3,7 +3,7 @@ import type { Hex } from "viem";
 import { Buffer } from "node:buffer";
 import { expect, test } from "@playwright/test";
 import * as jsqr from "jsqr";
-import { accept, approve, bondOf, dealCount, dealOf, deployProject, investorKey, offer, pitchDirectly, publishProfiles, restoreBonds, vote } from "./chain.ts";
+import { accept, approve, bondOf, dealOf, deployProject, investorKey, offer, pitchDirectly, publishProfiles, restoreBonds, vote } from "./chain.ts";
 
 // jsqr is a CommonJS bundle. When it runs its `default` is the decoder, which its types put one level deeper.
 const readQr = jsqr.default as unknown as typeof jsqr.default.default;
@@ -203,21 +203,26 @@ test("deposits into the fund for shares and redeems them", async ({ page }) => {
 
 test("puts the newest pitch at the table and the pitch code on the big screen", async ({ page }) => {
   test.skip(test.info().project.name !== "desktop", "The big screen is for a projector.");
-  await pitchDirectly(site(), "Screen Pizza");
+  const { dealId: own } = await pitchDirectly(site(), "Screen Pizza");
 
   await page.goto("/screen");
   await expect(page.getByRole("banner")).toHaveCount(0);
   const table = page.getByTestId("table");
-  // Other tests pitch at the same time, so the newest pitch need not be this test's own, and
-  // the table turns to a deal investors have just moved to veto, which another test may have done.
+  // Other tests pitch at the same time, so the table shows this test's pitch or one that came
+  // after it, or turns to a deal investors have just moved to veto, which another test may have done.
   await expect.poll(async () => {
     const shown = await table.evaluate(element => ({
       deal: element.dataset.deal,
       name: element.querySelector("h2")?.textContent,
       contested: element.querySelector("[data-testid=veto-meter]") !== null,
     }));
-    const newest = await dealCount();
-    return shown.contested || (shown.deal === String(newest) && shown.name === (await dealOf(newest)).name);
+    if (shown.contested) {
+      return true;
+    }
+    if (shown.deal === undefined || BigInt(shown.deal) < own) {
+      return false;
+    }
+    return shown.name === (await dealOf(BigInt(shown.deal))).name;
   }).toBe(true);
   await expect(table.locator("article")).toHaveCount(4);
 

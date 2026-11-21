@@ -110,11 +110,6 @@ export async function dealOf(dealId: bigint) {
   return reader.readContract({ address: committee, abi: committeeAbi, functionName: "getDeal", args: [dealId] });
 }
 
-/** How many pitches the committee has received, which is also the id of the newest. */
-export async function dealCount(): Promise<bigint> {
-  return reader.readContract({ address: committee, abi: committeeAbi, functionName: "dealCount" });
-}
-
 export async function bondOf(seat: number) {
   return (await reader.readContract({ address: committee, abi: committeeAbi, functionName: "getPartner", args: [partners[seat]!.account.address] })).bond;
 }
