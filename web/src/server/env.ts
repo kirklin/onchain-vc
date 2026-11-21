@@ -16,6 +16,8 @@ const schema = z.object({
   OPERATOR_PRIVATE_KEY: key.optional(),
   PARTNER_KEYS: z.string().transform(value => value.split(",").map(item => item.trim())).pipe(z.array(key).length(4)).optional(),
   PARTNER_MODEL: z.string().regex(MODEL, "must be <provider>/<model>, e.g. deepseek/deepseek-flash").optional(),
+  PARTNER_BASE_URL: z.url().optional(),
+  PARTNER_API_KEY: z.string().optional(),
   COMMITTEE: z.enum(["on", "off"]).optional(),
   APP_URL: z.url().optional(),
   DATABASE_URL: z.string().regex(POSTGRES_URL, "must start with postgres:// or postgresql://").optional(),
@@ -49,6 +51,11 @@ function load() {
       (parsed.PARTNER_KEYS ?? (name === "local" ? [...LOCAL_PARTNER_KEYS] : undefined)) as Hex[] | undefined,
     /** The model the partners run on, as `<provider>/<model>` in the pi-ai catalog. */
     partnerModel: parsed.PARTNER_MODEL ?? "deepseek/deepseek-flash",
+    /**
+     * An endpoint that speaks Anthropic's Messages API, such as a gateway in front of several
+     * model vendors. With it, PARTNER_MODEL names a model there and PARTNER_API_KEY is its key.
+     */
+    partnerBaseUrl: parsed.PARTNER_BASE_URL?.replace(TRAILING_SLASHES, ""),
     /**
      * Whether this process runs the partners. Turn it off on all but one instance when
      * several serve the same app, or each partner would vote from every one of them.

@@ -21,7 +21,7 @@ import { RpcGateway } from "~/server/rpc-gateway";
 import { ANVIL_KEYS, ANVIL_URL, deployContract, deployFundSystem, testChain, testClient } from "./helpers";
 
 // Holds real meetings, with the model PARTNER_MODEL names, so it runs only where its key is set.
-const enabled = process.env.DEEPSEEK_API_KEY !== undefined && process.env.DEEPSEEK_API_KEY !== "";
+const enabled = [process.env.DEEPSEEK_API_KEY, process.env.PARTNER_API_KEY].some(value => value !== undefined && value !== "");
 const MEETING_TIMEOUT = 240_000;
 
 const key = ANVIL_KEYS[1];
