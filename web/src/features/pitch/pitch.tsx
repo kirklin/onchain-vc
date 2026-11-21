@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { formatUnits, getAddress, isAddress, parseUnits } from "viem";
 import { useBytecode, useConfig, useConnection, useReadContract } from "wagmi";
-import { readContract, writeContract } from "wagmi/actions";
+import { getBytecode, readContract, writeContract } from "wagmi/actions";
 import { useAutoConnect } from "~/chain/burner/use-auto-connect";
 import { isCommitteeText, MAX_NAME_BYTES } from "~/chain/committee";
 import { useDeployment } from "~/chain/contracts";
@@ -24,6 +24,11 @@ const MAX_SUMMARY = 140;
 const MAX_DESCRIPTION = 2000;
 const MAX_LINKS = 5;
 const DELEGATION_PREFIX = "0xef0100";
+
+/** Whether the code at an address is a contract's own, which leaves out accounts that delegate to one. */
+function holdsContract(code: string | null | undefined): boolean {
+  return code !== undefined && code !== null && code !== "0x" && !code.startsWith(DELEGATION_PREFIX);
+}
 
 export function Pitch() {
   const t = useTranslations("pitch");
@@ -63,7 +68,7 @@ function PitchForm({ founder }: { founder: Address }) {
 
   const projectAddress = isAddress(project.trim()) ? getAddress(project.trim()) : undefined;
   const { data: code, isFetched: codeChecked } = useBytecode({ address: projectAddress, query: { enabled: projectAddress !== undefined } });
-  const isContract = code !== undefined && code !== null && code !== "0x" && !code.startsWith(DELEGATION_PREFIX);
+  const isContract = holdsContract(code);
 
   if (openDeal !== undefined && openDeal > 0n) {
     return (
@@ -77,11 +82,11 @@ function PitchForm({ founder }: { founder: Address }) {
   const linkList = links.split("\n").map(line => line.trim()).filter(line => line !== "");
   const maxAsk = fund === undefined ? undefined : Number(formatUnits(fund.maxAsk, fund.decimals));
 
-  function problem(): string | undefined {
+  function problem(deployed: boolean): string | undefined {
     if (projectAddress === undefined) {
       return t("invalidProject");
     }
-    if (!isContract) {
+    if (!deployed) {
       return t("notContract");
     }
     if (!isCommitteeText(name.trim(), MAX_NAME_BYTES)) {
@@ -101,7 +106,9 @@ function PitchForm({ founder }: { founder: Address }) {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const found = problem();
+    // Read at the moment of submitting, so a pitch sent right after the address is pasted is judged on the chain's answer.
+    const deployed = projectAddress !== undefined && holdsContract(await getBytecode(config, { address: projectAddress }));
+    const found = problem(deployed);
     setError(found);
     if (found !== undefined || fund === undefined || projectAddress === undefined) {
       return;
