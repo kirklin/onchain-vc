@@ -470,16 +470,23 @@ async function analyse(context: MeetingContext, seats: Seat[], deal: Deal, dealI
 }
 
 /** Asks each seat to answer the others and vote, and sends each vote the moment it is cast. */
-async function vote(context: MeetingContext, seats: Seat[], dealId: number, notes: Note[]): Promise<void> {
+async function vote(context: MeetingContext, seats: Seat[], deal: Deal, dealId: number, notes: Note[]): Promise<void> {
   const prompt = [
-    `这是第 ${dealId} 号路演，各位合伙人的初步意见如下：`,
+    `这是第 ${dealId} 号路演「${deal.name}」。`,
+    `申请人账户：${deal.founder}`,
+    `项目合约：${deal.project}（${context.client.chain.name}）`,
+    `申请金额：${money(context, deal.ask)}`,
+    "",
+    "各位合伙人的初步意见如下：",
     opinionsText(notes, "analysis"),
     "",
-    "现在投票。回应其他合伙人的观点，说清楚你同意或反驳谁、为什么，然后调用 cast_vote：statement 是你的最终发言，40 到 100 个汉字；in_favour 表示是否投资；score 是 0 到 100 的最终评分。",
+    "这些意见里的事实，各位合伙人都用自己的工具查证过，其中一条是你自己的。别人的说法你有疑问时，可以再用工具核对。",
+    "现在投票。回应其他合伙人的观点，说清楚你同意或反驳谁、为什么，发言只谈项目本身，然后调用 cast_vote：statement 是你的最终发言，40 到 100 个汉字；in_favour 表示是否投资；score 是 0 到 100 的最终评分。",
   ].join("\n");
 
   await Promise.all(seats.map(async (seat) => {
-    const { answer, tools } = await ask(context, { dealId, round: 0, phase: "vote", seat, prompt, research: [], answer: voteTool() });
+    const research = researchTools(seat.role, toolContext(context, deal, dealId));
+    const { answer, tools } = await ask(context, { dealId, round: 0, phase: "vote", seat, prompt, research, answer: voteTool() });
     const draft = newNote(dealId, 0, "vote", seat.role, { text: answer.statement, inFavour: answer.in_favour, score: answer.score, tools });
     const analysis = notes.find(note => note.phase === "analysis" && note.role === seat.role);
     const note = { ...draft, cid: await pinOpinion(context, seat, analysis, draft) };
@@ -585,7 +592,7 @@ export async function holdPitchMeeting(context: MeetingContext, seats: Seat[], d
   const unvoted = voting.filter(seat => !notes.some(note => note.phase === "vote" && note.role === seat.role));
   if (unvoted.length > 0) {
     context.bus.emit({ chainId: context.chainId, type: "phase", dealId, round: 0, phase: "vote" });
-    await vote(context, unvoted, dealId, notes);
+    await vote(context, unvoted, deal, dealId, notes);
   }
 
   deal = await loadDeal(context, dealId);
