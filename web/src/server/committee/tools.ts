@@ -2,11 +2,13 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { Address, Chain, Hex, PublicClient, Transport } from "viem";
 import type { Database } from "../db";
 import type { RoleKey, StageKey } from "~/chain/committee";
+import type { Network } from "~/chain/networks";
 import { Buffer } from "node:buffer";
 import { obj, str } from "@earendil-works/pi-schema";
 import { and, asc, eq } from "drizzle-orm";
 import { formatEther, formatUnits, getAddress, isAddress, keccak256, parseAbi, toFunctionSelector } from "viem";
 import { STAGES } from "~/chain/committee";
+import { networks } from "~/chain/networks";
 import { committeeAbi, fundAbi } from "~/contracts/abis";
 import { chainEvents } from "../db/schema";
 import { searchMonadDocs } from "./docs";
@@ -126,14 +128,28 @@ async function verifiedSource(chainId: number, address: Address): Promise<string
   if (chainId === LOCAL_CHAIN_ID) {
     return "源码验证：本地链没有源码验证服务。";
   }
-  const response = await fetch(`https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=sources`, { headers: { "user-agent": "onchain-vc" } });
-  if (response.status === 404) {
+  // A chain whose explorer runs its own Sourcify keeps what was verified there, which the
+  // public one does not have. Both answer the same lookup, so the chain's own is asked first.
+  const own = Object.values<Network>(networks).find(network => network.chain.id === chainId)?.verifierUrl;
+  const lookups = [
+    ...(own === undefined ? [] : [new URL(`v2/contract/${chainId}/${address}?fields=sources`, own)]),
+    new URL(`https://sourcify.dev/server/v2/contract/${chainId}/${address}?fields=sources`),
+  ];
+  let body: { sources?: Record<string, { content: string }> } | undefined;
+  for (const lookup of lookups) {
+    const response = await fetch(lookup, { headers: { "user-agent": "onchain-vc" } });
+    if (response.status === 404) {
+      continue;
+    }
+    if (!response.ok) {
+      throw new Error(`${lookup.host} 返回 HTTP ${response.status}。`);
+    }
+    body = await response.json() as { sources?: Record<string, { content: string }> };
+    break;
+  }
+  if (body === undefined) {
     return "源码验证：没有在 Sourcify 验证过源码。";
   }
-  if (!response.ok) {
-    throw new Error(`Sourcify 返回 HTTP ${response.status}。`);
-  }
-  const body = await response.json() as { sources?: Record<string, { content: string }> };
   const files = Object.entries(body.sources ?? {}).filter(([file]) => !file.includes("node_modules") && !file.startsWith("lib/"));
   const joined = files.map(([file, source]) => `// ${file}\n${source.content}`).join("\n\n");
   return `源码验证：已在 Sourcify 验证，共 ${files.length} 个项目文件。源码${joined.length > MAX_SOURCE_CHARS ? `前 ${MAX_SOURCE_CHARS} 个字符` : ""}如下：\n${joined.slice(0, MAX_SOURCE_CHARS)}`;

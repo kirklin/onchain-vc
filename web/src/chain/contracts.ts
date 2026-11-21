@@ -14,6 +14,7 @@ export const contracts = {
   Committee: { abi: generated.committeeAbi, addresses: generated.committeeAddress },
   Fund: { abi: generated.fundAbi, addresses: generated.fundAddress },
   PortfolioBadge: { abi: generated.portfolioBadgeAbi, addresses: generated.portfolioBadgeAddress },
+  Reception: { abi: generated.receptionAbi, addresses: generated.receptionAddress },
   Token: { abi: generated.tokenAbi, addresses: generated.tokenAddress },
   Forwarder: { abi: generated.forwarderAbi, addresses: generated.forwarderAddress },
   BatchExecutor: { abi: generated.batchExecutorAbi, addresses: generated.batchExecutorAddress },

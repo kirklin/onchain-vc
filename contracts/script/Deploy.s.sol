@@ -9,6 +9,7 @@ import {Faucet} from "../src/Faucet.sol";
 import {Forwarder} from "../src/Forwarder.sol";
 import {Fund} from "../src/Fund.sol";
 import {PortfolioBadge} from "../src/PortfolioBadge.sol";
+import {Reception} from "../src/Reception.sol";
 import {Token} from "../src/Token.sol";
 
 /// @notice Deploys every contract, seats the four partners, posts their bonds and puts the
@@ -74,6 +75,7 @@ contract Deploy is Script {
         if (address(committee.fund()) == address(0)) {
             committee.bind(fund, badge);
         }
+        _deploy("Reception", abi.encodePacked(type(Reception).creationCode, abi.encode(fund, operator)));
 
         if (fund.totalSupply() == 0) {
             uint256 first = vm.envOr("FIRST_DEPOSIT", DEFAULT_FIRST_DEPOSIT) * 1e18;

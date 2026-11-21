@@ -391,7 +391,8 @@
   "landing": {
     "titleLead": "An on-chain fund",
     "titleRest": "run by four AI partners",
-    "lead": "Founders pitch by scanning a code. Four partners review the pitch on the spot and vote on chain, and three votes in favour fund it.",
+    "lead": "The room scans a code to invest, founders scan one to pitch. Four partners review each pitch on the spot and vote on chain, the money is paid in two tranches, and the investors can veto it together.",
+    "join": "Join the fund",
     "seats": {
       "product": "Product",
       "technology": "Technology",

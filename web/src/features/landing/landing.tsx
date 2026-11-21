@@ -153,6 +153,7 @@ function Hero() {
           <p className="max-w-[34rem] text-[17px] leading-relaxed text-white/65 sm:text-lg">{t("lead")}</p>
           <div className="flex flex-wrap gap-3">
             <PillLink href="/pitch">{t("pitch")}</PillLink>
+            <PillLink href="/join" tone="glass">{t("join")}</PillLink>
             <PillLink href="/room" tone="glass">{t("watch")}</PillLink>
           </div>
           <LatestDeal />
@@ -496,6 +497,7 @@ function Closing() {
         <p className="max-w-xl text-[17px] leading-relaxed text-white/65">{t("closingHint")}</p>
         <div className="flex flex-wrap justify-center gap-3">
           <PillLink href="/pitch">{t("pitch")}</PillLink>
+          <PillLink href="/join" tone="glass">{t("join")}</PillLink>
           <PillLink href="/room" tone="glass">{t("watch")}</PillLink>
         </div>
       </div>

@@ -5,7 +5,6 @@ import { createTestClient, http, parseEther } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { fundAbi } from "~/contracts/abis";
-import { FaucetService } from "~/server/faucet";
 import { JoinService } from "~/server/join";
 import { Operator } from "~/server/operator";
 import { RpcGateway } from "~/server/rpc-gateway";
@@ -17,13 +16,14 @@ const shares = parseEther("1000");
 const gasMoney = parseEther("0.1");
 
 let system: FundSystem;
-let faucetContract: Address;
+let reception: Address;
 
 beforeAll(async () => {
+  const host = privateKeyToAccount(key).address;
   const tester = createTestClient({ chain: testChain, mode: "anvil", transport: http(ANVIL_URL) });
-  await tester.setBalance({ address: privateKeyToAccount(key).address, value: parseEther("100") });
+  await tester.setBalance({ address: host, value: parseEther("100") });
   system = await deployFundSystem(key, privateKeyToAccount(generatePrivateKey()).address);
-  faucetContract = await deployContract("Faucet", key);
+  reception = await deployContract("Reception", key, [system.fund, host]);
 });
 
 function freshAddress(): Address {
@@ -33,8 +33,7 @@ function freshAddress(): Address {
 function setup(overrides: Partial<JoinOptions> = {}) {
   const gateway = new RpcGateway({ upstreams: [ANVIL_URL], batchIntervalMs: 0, blockTtlMs: 50 });
   const operator = new Operator({ key, chain: testChain, gateway });
-  const faucet = new FaucetService({ operator, contract: faucetContract, target: gasMoney, lowWater: gasMoney / 2n, perAddress: gasMoney * 2n, budget: parseEther("10") });
-  const join = new JoinService({ operator, fund: system.fund, token: system.token, faucet, gasMarginPercent: 20, shares, members: 100, ...overrides });
+  const join = new JoinService({ operator, fund: system.fund, token: system.token, reception, gasMoney, gasMarginPercent: 20, shares, members: 100, ...overrides });
   return { operator, join };
 }
 
@@ -56,13 +55,18 @@ describe("joining the fund", () => {
     expect(join.members).toBe(1);
   });
 
-  it("gives every visitor the same number of shares", async () => {
+  it("takes visitors who arrive together in with one transaction, each with the same shares", async () => {
     const { operator, join } = setup();
-    const visitors = [freshAddress(), freshAddress(), freshAddress()];
+    const visitors = Array.from({ length: 12 }, freshAddress);
+    // The first request finds the service idle and goes alone. The rest ride together.
+    await join.join(freshAddress());
+    const nonce = await operator.client.getTransactionCount({ address: operator.address });
 
-    await Promise.all(visitors.map(visitor => join.join(visitor)));
+    const results = await Promise.all(visitors.map(visitor => join.join(visitor)));
 
-    expect(await Promise.all(visitors.map(visitor => sharesOf(operator, visitor)))).toEqual([shares, shares, shares]);
+    expect(await Promise.all(visitors.map(visitor => sharesOf(operator, visitor)))).toEqual(visitors.map(() => shares));
+    expect(new Set(results.map(result => result.status === "joined" && result.transactionHash)).size).toBeLessThanOrEqual(2);
+    expect(await operator.client.getTransactionCount({ address: operator.address }) - nonce).toBeLessThanOrEqual(2);
   });
 
   it("takes each address in once", async () => {

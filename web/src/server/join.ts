@@ -1,9 +1,8 @@
 import type { Address, Hash } from "viem";
-import type { FaucetService } from "./faucet";
 import type { Operator } from "./operator";
 import type { JoinLimits } from "~/chain/networks";
-import { encodeFunctionData, maxUint256 } from "viem";
-import { fundAbi, tokenAbi } from "~/contracts/abis";
+import { encodeFunctionData } from "viem";
+import { fundAbi, receptionAbi, tokenAbi } from "~/contracts/abis";
 
 export type JoinResult
   = | { status: "joined"; shares: bigint; transactionHash: Hash; blockNumber: bigint }
@@ -16,25 +15,41 @@ export interface JoinOptions extends JoinLimits {
   operator: Operator;
   fund: Address;
   token: Address;
-  /** Gives the visitor native tokens for the gas of their own vetoes, where there is a faucet. */
-  faucet: FaucetService | undefined;
+  /** The Reception contract, which takes many visitors in with one transaction. */
+  reception: Address;
+  /** The native tokens each visitor is left with, for the gas of their own vetoes. */
+  gasMoney: bigint;
   /** How far above the node's estimate to set gas limits, in percent. */
   gasMarginPercent: number;
+  maxBatchSize?: number;
+}
+
+interface Waiter {
+  address: Address;
+  resolve: (result: JoinResult) => void;
+  reject: (error: unknown) => void;
 }
 
 /**
- * Makes a visitor an investor: the operator mints the fund's asset and buys the same number
- * of shares for each of them, so a room of people can hold the fund together and each
- * counts alike when they vote on a veto. The asset is a test token the operator owns.
+ * Makes visitors investors: each gets the same number of shares, so a room of people can
+ * hold the fund together and each counts alike when they vote on a veto. The shares are
+ * bought with a test token the operator mints.
+ *
+ * Requests that arrive while a transaction is in flight ride together in the next one, so a
+ * room that scans the code at the same moment is taken in by a few transactions.
  */
 export class JoinService {
-  readonly #options: JoinOptions;
+  readonly #options: Required<JoinOptions>;
   readonly #inFlight = new Map<Address, Promise<JoinResult>>();
-  #ready: Promise<void> | undefined;
+  #queue: Waiter[] = [];
+  #draining = false;
+  /** Visitors accepted whose transaction has not settled yet. */
+  #waiting = 0;
   #members = 0;
 
   constructor(options: JoinOptions) {
-    this.#options = options;
+    // Each visitor costs about 200k gas, and a transaction may use 30M.
+    this.#options = { maxBatchSize: 50, ...options };
   }
 
   get members(): number {
@@ -52,52 +67,66 @@ export class JoinService {
   }
 
   async #join(address: Address): Promise<JoinResult> {
-    const { operator, fund, faucet, shares, members, gasMarginPercent } = this.#options;
-
+    const { operator, fund, members } = this.#options;
     const held = await operator.client.readContract({ address: fund, abi: fundAbi, functionName: "balanceOf", args: [address] });
     if (held > 0n) {
       return { status: "member", shares: held };
     }
-    if (this.#members + this.#inFlight.size > members) {
+    if (this.#members + this.#waiting >= members) {
       return { status: "full" };
     }
-
-    this.#ready ??= this.#prepare();
-    await this.#ready;
-    // The gas money goes out first, so it has aged past the chain's spend delay by the time it is needed.
-    await faucet?.fund(address);
-
-    const call = { address: fund, abi: fundAbi, functionName: "mint", args: [shares, address] } as const;
-    const gas = await operator.client.estimateContractGas({ ...call, account: operator.address });
-    const receipt = await operator.send({
-      to: fund,
-      data: encodeFunctionData(call),
-      gas: gas + gas * BigInt(gasMarginPercent) / 100n,
+    this.#waiting += 1;
+    return new Promise<JoinResult>((resolve, reject) => {
+      this.#queue.push({ address, resolve, reject });
+      void this.#drain();
+    }).finally(() => {
+      this.#waiting -= 1;
     });
-    this.#members += 1;
-    return { status: "joined", shares, transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber };
   }
 
-  /** Mints what the visitors' shares can cost and lets the fund draw on it. */
-  async #prepare() {
-    const { operator, fund, token, shares, members } = this.#options;
-    // A share is worth more than one token once the fund has gained, so the float is doubled.
-    const float = shares * BigInt(members) * 2n;
-    const [balance, allowance] = await Promise.all([
-      operator.client.readContract({ address: token, abi: tokenAbi, functionName: "balanceOf", args: [operator.address] }),
-      operator.client.readContract({ address: token, abi: tokenAbi, functionName: "allowance", args: [operator.address, fund] }),
+  async #drain() {
+    if (this.#draining) {
+      return;
+    }
+    this.#draining = true;
+    while (this.#queue.length > 0) {
+      const waiters = this.#queue.splice(0, this.#options.maxBatchSize);
+      try {
+        const receipt = await this.#admit(waiters.map(waiter => waiter.address));
+        this.#members += waiters.length;
+        for (const waiter of waiters) {
+          waiter.resolve({ status: "joined", shares: this.#options.shares, transactionHash: receipt.transactionHash, blockNumber: receipt.blockNumber });
+        }
+      } catch (error) {
+        for (const waiter of waiters) {
+          waiter.reject(error);
+        }
+      }
+    }
+    this.#draining = false;
+  }
+
+  async #admit(visitors: Address[]) {
+    const { operator, reception, shares, gasMoney, gasMarginPercent } = this.#options;
+    await this.#stock(visitors.length);
+    const call = { address: reception, abi: receptionAbi, functionName: "admit", args: [visitors, shares, gasMoney] } as const;
+    const value = gasMoney * BigInt(visitors.length);
+    const gas = await operator.client.estimateContractGas({ ...call, value, account: operator.address });
+    return operator.send({ to: reception, data: encodeFunctionData(call), value, gas: gas + gas * BigInt(gasMarginPercent) / 100n });
+  }
+
+  /** Keeps the Reception holding what the next visitors' shares cost, minting well ahead when it runs low. */
+  async #stock(visitors: number) {
+    const { operator, fund, token, reception, shares, members, gasMarginPercent } = this.#options;
+    const [price, held] = await Promise.all([
+      operator.client.readContract({ address: fund, abi: fundAbi, functionName: "previewMint", args: [shares] }),
+      operator.client.readContract({ address: token, abi: tokenAbi, functionName: "balanceOf", args: [reception] }),
     ]);
-    if (balance < float) {
-      await this.#send(token, encodeFunctionData({ abi: tokenAbi, functionName: "mint", args: [operator.address, float - balance] }));
+    if (held >= price * BigInt(visitors)) {
+      return;
     }
-    if (allowance < float) {
-      await this.#send(token, encodeFunctionData({ abi: tokenAbi, functionName: "approve", args: [fund, maxUint256] }));
-    }
-  }
-
-  async #send(to: Address, data: `0x${string}`) {
-    const { operator, gasMarginPercent } = this.#options;
-    const gas = await operator.client.estimateGas({ account: operator.address, to, data });
-    await operator.send({ to, data, gas: gas + gas * BigInt(gasMarginPercent) / 100n });
+    const data = encodeFunctionData({ abi: tokenAbi, functionName: "mint", args: [reception, price * BigInt(members)] });
+    const gas = await operator.client.estimateGas({ account: operator.address, to: token, data });
+    await operator.send({ to: token, data, gas: gas + gas * BigInt(gasMarginPercent) / 100n });
   }
 }

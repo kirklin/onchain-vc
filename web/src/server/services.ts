@@ -22,7 +22,7 @@ export interface ChainServices {
   faucet: FaucetService | undefined;
   /** Present when the network has relay limits, an operator, and a deployed Forwarder contract. */
   relay: RelayService | undefined;
-  /** Present when the network takes visitors into the fund, with an operator and a deployed Fund. */
+  /** Present when the network takes visitors into the fund, with an operator and a deployed Reception. */
   join: JoinService | undefined;
 }
 
@@ -57,9 +57,18 @@ function create(name: NetworkName): ChainServices {
 
   const fund = addressOn("Fund", chain.id);
   const token = addressOn("Token", chain.id);
-  const join = network.join === undefined || operator === undefined || fund === undefined || token === undefined
+  const reception = addressOn("Reception", chain.id);
+  const join = network.join === undefined || operator === undefined || fund === undefined || token === undefined || reception === undefined
     ? undefined
-    : new JoinService({ operator, fund, token, faucet, gasMarginPercent: network.gasMarginPercent ?? DEFAULT_GAS_MARGIN_PERCENT, ...network.join });
+    : new JoinService({
+        operator,
+        fund,
+        token,
+        reception,
+        gasMoney: network.faucet?.target ?? 0n,
+        gasMarginPercent: network.gasMarginPercent ?? DEFAULT_GAS_MARGIN_PERCENT,
+        ...network.join,
+      });
 
   return { name, network, gateway, client, operator, faucet, relay, join };
 }

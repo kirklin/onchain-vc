@@ -2434,6 +2434,103 @@ export const portfolioBadgeConfig = {
 } as const
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Reception
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *
+ */
+export const receptionAbi = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: 'fund_', internalType: 'contract Fund', type: 'address' },
+      { name: 'host_', internalType: 'address', type: 'address' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'TRANSFER_GAS',
+    outputs: [{ name: '', internalType: 'uint256', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [
+      { name: 'visitors', internalType: 'address[]', type: 'address[]' },
+      { name: 'shares', internalType: 'uint256', type: 'uint256' },
+      { name: 'gasMoney', internalType: 'uint256', type: 'uint256' },
+    ],
+    name: 'admit',
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'fund',
+    outputs: [{ name: '', internalType: 'contract Fund', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    inputs: [],
+    name: 'host',
+    outputs: [{ name: '', internalType: 'address', type: 'address' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'event',
+    anonymous: false,
+    inputs: [
+      {
+        name: 'visitor',
+        internalType: 'address',
+        type: 'address',
+        indexed: true,
+      },
+      {
+        name: 'shares',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+      {
+        name: 'cost',
+        internalType: 'uint256',
+        type: 'uint256',
+        indexed: false,
+      },
+    ],
+    name: 'Admitted',
+  },
+  { type: 'error', inputs: [], name: 'NotTheHost' },
+  { type: 'error', inputs: [], name: 'RefundFailed' },
+  {
+    type: 'error',
+    inputs: [{ name: 'token', internalType: 'address', type: 'address' }],
+    name: 'SafeERC20FailedOperation',
+  },
+] as const
+
+/**
+ *
+ */
+export const receptionAddress = {
+  31337: '0x50a76cEdc474Fc48b6F462F113e06598F2F7276D',
+} as const
+
+/**
+ *
+ */
+export const receptionConfig = {
+  address: receptionAddress,
+  abi: receptionAbi,
+} as const
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Token
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
